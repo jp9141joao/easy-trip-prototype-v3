@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert, Platform, Dimensions, PanResponder, Image } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Alert, Platform, Dimensions, PanResponder, Image, Pressable } from "react-native";
 import type { ViewStyle } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -90,7 +90,7 @@ export default function HomeScreen() {
       <View style={[containerOuterStyle]}>
         <View style={{ height: Platform.OS === "web" ? 20 : 0 }} />
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 160 }} keyboardShouldPersistTaps="handled">
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 36, paddingBottom: 160 }} keyboardShouldPersistTaps="handled">
           {/* Header */}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -214,22 +214,62 @@ export default function HomeScreen() {
         </ScrollView>
 
         {/* Bottom nav */}
+        {/* Bottom nav */}
         <View style={{ position: "absolute", left: 12, right: 12, bottom: 16 }}>
-          <View style={{ borderRadius: 24, backgroundColor: "#fff", paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: "#e5e7eb", flexDirection: "row", alignItems: "center", justifyContent: "space-between", ...shadow(14) }}>
+          <View
+            style={{
+              borderRadius: 24,
+              backgroundColor: "#fff",
+              paddingVertical: 12,
+              paddingHorizontal: 24,
+              borderWidth: 1,
+              borderColor: "#e5e7eb",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              ...shadow(14),
+            }}
+          >
             {[
-              { key: "home", label: "Home", icon: (a: boolean) => <Ionicons name={a ? "home"      : "home-outline"}      size={18} color={a ? "#fff" : "#6b7280"} /> },
-              { key: "discover", label: "Discover", icon: (a: boolean) => <Ionicons name={a ? "compass"   : "compass-outline"}   size={18} color={a ? "#fff" : "#6b7280"} /> },
+              { key: "home", label: "Home", icon: (a: boolean) => <Ionicons name={a ? "home" : "home-outline"} size={18} color={a ? "#fff" : "#6b7280"} /> },
+              { key: "discover", label: "Discover", icon: (a: boolean) => <Ionicons name={a ? "compass" : "compass-outline"} size={18} color={a ? "#fff" : "#6b7280"} /> },
               { key: "trips", label: "Minhas viagens", icon: (a: boolean) => <Ionicons name={a ? "briefcase" : "briefcase-outline"} size={18} color={a ? "#fff" : "#6b7280"} /> },
-              { key: "profile", label: "Profile", icon: (a: boolean) => <Ionicons name={a ? "person"    : "person-outline"}    size={18} color={a ? "#fff" : "#6b7280"} /> },
+              { key: "profile", label: "Profile", icon: (a: boolean) => <Ionicons name={a ? "person" : "person-outline"} size={18} color={a ? "#fff" : "#6b7280"} /> },
             ].map((item: any) => {
               const isActive = bottomTab === item.key;
               return (
-                <TouchableOpacity key={item.key} onPress={() => setBottomTab(item.key)} style={{ alignItems: "center" }}>
-                  <View style={[{ height: 36, width: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: "transparent" }, isActive && { backgroundColor: BRAND }]}>
+                <View key={item.key} style={{ alignItems: "center" }}>
+                  <Pressable
+                    onPress={() => setBottomTab(item.key)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    android_ripple={{ color: BRAND + "22", foreground: true, borderless: false }}
+                    style={[
+                      {
+                        width: 36,
+                        aspectRatio: 1,          // mantém 1:1
+                        borderRadius: 9999,      // círculo real
+                        alignItems: "center",
+                        justifyContent: "center",
+                        overflow: "hidden",      // recorta o ripple -> sem cantos
+                        backgroundColor: "transparent",
+                      },
+                      isActive && { backgroundColor: BRAND },
+                    ]}
+                  >
                     {item.icon(isActive)}
-                  </View>
-                  <Text style={{ marginTop: 4, fontSize: 12, fontWeight: "600", color: isActive ? BRAND : "#6b7280" }}>{item.label}</Text>
-                </TouchableOpacity>
+                  </Pressable>
+
+                  <Text
+                    style={{
+                      marginTop: 4,
+                      fontSize: 12,
+                      fontWeight: "600",
+                      color: isActive ? BRAND : "#6b7280",
+                    }}
+                  >
+                    {item.label}
+                  </Text>
+                </View>
               );
             })}
           </View>
