@@ -1,1126 +1,917 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useMemo, useState } from "react";
 import {
+  SafeAreaView,
   View,
   Text,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
+  StatusBar,
   StyleSheet,
+  ScrollView,
+  Pressable,
+  ImageBackground,
+  FlatList,
   Dimensions,
-  Alert,
   Platform,
-  PanResponder,
-  Animated,
-  Easing,
-} from 'react-native';
-import type { ViewStyle, StyleProp } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+  TextInput,
+  Image,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
-// ---------------- Theme / Layout ----------------
-const BRAND = '#00AF87' as const;
-const FRAME_W = 390;
-const VISIBLE_RANGE = 1;
-const SWIPE_THRESHOLD = 40; // deslize mínimo p/ trocar card
+/**
+ * EasyTrip — Home (index.tsx)
+ * - Novas sessões: Próximos, Da comunidade, Promoções
+ * - Cards de funcionalidades em pé (altura > largura)
+ * - Tema Dark/Light funcional
+ */
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+const ACCENT = "#00AF87";
 
-// espaçamentos dos carrosséis (MAIOR p/ dar sombra)
-const CAROUSEL_PAD_H = 14;
-const CAROUSEL_PAD_B = Platform.OS === 'android' ? 32 : 24;
+// ---------- THEMES ----------
+type Theme = {
+  bg: string;
+  card: string;
+  cardAlt: string;
+  text: string;
+  textMuted: string;
+  border: string;
+};
 
-// ---------------- Types ----------------
-interface Trip {
+const DARK: Theme = {
+  bg: "#0A0A0B",
+  card: "#121315",
+  cardAlt: "#15171A",
+  text: "#FFFFFF",
+  textMuted: "#A1A1AA",
+  border: "#23262B",
+};
+
+const LIGHT: Theme = {
+  bg: "#FFFFFF",
+  card: "#F5F7FA",
+  cardAlt: "#FFFFFF",
+  text: "#0F1720",
+  textMuted: "#6B7280",
+  border: "#E5E7EB",
+};
+
+// ---------- TYPES ----------
+type CardItem = {
+  id: string;
   title: string;
-  subtitle: string;
-  price: string;
-  city: string;
-  img: string;
-}
+  location?: string;
+  image: string;
+  rating: number; // 0..5
+  reviews?: number;
+  price?: string;
+  badge?: string;
+};
 
-type ActionKey =
-  | 'social'
-  | 'promos'
-  | 'logbook'
-  | 'ai'
-  | 'itinerary'
-  | 'gastos'
-  | 'agenda'
-  | 'fotos'
-  | 'expert'
-  | 'currency'
-  | 'advisory'; // ✅ novo: Assessoria
-
-interface Action {
-  key: ActionKey;
-  label: string;
-}
-
-interface Benefit {
+type FeatureItem = {
   key: string;
   title: string;
-  text: string;
-  icon: string;
+  subtitle?: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  image: string;
+};
+
+type UpcomingItem = {
+  id: string;
+  dateLabel: string; // "02 Dez"
+  title: string; // "Trilha Aconcágua"
+  icon: keyof typeof Ionicons.glyphMap; // "map", "airplane", etc.
+};
+
+type CommunityPost = {
+  id: string;
+  title: string;
+  author: string;
+  minutes: number;
+  image: string;
+};
+
+// ---------- DATA ----------
+const hotels: CardItem[] = [
+  {
+    id: "h1",
+    title: "Rancho Encantado",
+    location: "Bacalar, Quintana Roo, Mexico",
+    image:
+      "https://images.unsplash.com/photo-1501117716987-c8e3f1a9d3a7?q=80&w=1200&auto=format&fit=crop",
+    rating: 4.6,
+    reviews: 1762,
+    price: "From $142",
+    badge: "2025",
+  },
+  {
+    id: "h2",
+    title: "Casa Bakal",
+    location: "Bacalar, Quintana Roo, Mexico",
+    image:
+      "https://images.unsplash.com/photo-1501117490113-2915e6f0f0a5?q=80&w=1200&auto=format&fit=crop",
+    rating: 4.0,
+    reviews: 293,
+    price: "From $153",
+  },
+  {
+    id: "h3",
+    title: "Azul Lagoon Resort",
+    location: "Bacalar, Quintana Roo, Mexico",
+    image:
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200&auto=format&fit=crop",
+    rating: 4.8,
+    reviews: 1123,
+    price: "From $189",
+  },
+];
+
+const experiences: CardItem[] = [
+  {
+    id: "e1",
+    title: "Bacalar Boat Tour & Cenotes",
+    location: "Bacalar",
+    image:
+      "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?q=80&w=1200&auto=format&fit=crop",
+    rating: 4.9,
+    reviews: 965,
+    price: "From $22 / adult",
+  },
+  {
+    id: "e2",
+    title: "Sailing Tour — Laguna de 7 Cores",
+    location: "Bacalar",
+    image:
+      "https://images.unsplash.com/photo-1493558103817-58b2924bce98?q=80&w=1200&auto=format&fit=crop",
+    rating: 5.0,
+    reviews: 1391,
+    price: "From $38 / adult",
+    badge: "2025",
+  },
+];
+
+const restaurants: CardItem[] = [
+  {
+    id: "r1",
+    title: "Nixtamal",
+    location: "Mexican • Steakhouse",
+    image:
+      "https://images.unsplash.com/photo-1521017432531-fbd92d1cf0c7?q=80&w=1200&auto=format&fit=crop",
+    rating: 4.8,
+    reviews: 2354,
+    price: "$$$$",
+    badge: "2025",
+  },
+  {
+    id: "r2",
+    title: "La Playita",
+    location: "Mexican • Seafood",
+    image:
+      "https://images.unsplash.com/photo-1520207588543-cf2f9cba8496?q=80&w=1200&auto=format&fit=crop",
+    rating: 4.4,
+    reviews: 3260,
+    price: "$$ • $$$",
+  },
+];
+
+// Funcionalidades (cards em pé)
+const features: FeatureItem[] = [
+  { key: "ai",          title: "Ajuda por IA",           subtitle: "Planeje em segundos",   icon: "flash",              image: "https://images.unsplash.com/photo-1526378722484-bd91ca387e72?q=80&w=1400&auto=format&fit=crop" },
+  { key: "diario",      title: "Diário de bordo",        subtitle: "Memórias da viagem",    icon: "book",               image: "https://images.unsplash.com/photo-1460186136353-977e9d6085a1?q=80&w=1400&auto=format&fit=crop" },
+  { key: "itinerario",  title: "Itinerário",             subtitle: "Dia a dia organizado",  icon: "map",                image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1400&auto=format&fit=crop" },
+  { key: "gastos",      title: "Gastos",                 subtitle: "Controle de despesas",  icon: "cash",               image: "https://images.unsplash.com/photo-1567427013953-1d4d7f0f76a0?q=80&w=1400&auto=format&fit=crop" },
+  { key: "agenda",      title: "Agenda",                 subtitle: "Compromissos e alertas",icon: "calendar",           image: "https://images.unsplash.com/photo-1513639725746-c5d3e861f32a?q=80&w=1400&auto=format&fit=crop" },
+  { key: "fotos",       title: "Fotos",                  subtitle: "Álbuns compartilhados", icon: "images",             image: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1400&auto=format&fit=crop" },
+  { key: "porquinho",   title: "Porquinho",              subtitle: "Cofrinho da viagem",    icon: "wallet",             image: "https://images.unsplash.com/photo-1500390368153-b6d9a2a06c59?q=80&w=1400&auto=format&fit=crop" },
+  { key: "especialista",title: "Falar com especialista", subtitle: "Atendimento humano",    icon: "chatbubbles",        image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1400&auto=format&fit=crop" },
+  { key: "moedas",      title: "Cotação de moedas",      subtitle: "Câmbio em tempo real",  icon: "swap-horizontal",    image: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?q=80&w=1400&auto=format&fit=crop" },
+  { key: "assessoria",  title: "Assessoria",             subtitle: "Vistos e suporte",      icon: "shield-checkmark",   image: "https://images.unsplash.com/photo-1517898717281-8e4385a4b7c7?q=80&w=1400&auto=format&fit=crop" },
+];
+
+// Agenda (Próximos)
+const upcoming: UpcomingItem[] = [
+  { id: "u1", dateLabel: "24 Nov", title: "Check-in: Rio de Janeiro", icon: "calendar" },
+  { id: "u2", dateLabel: "02 Dez", title: "Trilha Aconcágua", icon: "map" },
+  { id: "u3", dateLabel: "15 Dez", title: "Voo para Cusco", icon: "airplane" },
+];
+
+// Da comunidade
+const community: CommunityPost[] = [
+  {
+    id: "c1",
+    title: "Trilhas imperdíveis em Cusco",
+    author: "Mariana P.",
+    minutes: 4,
+    image:
+      "https://images.unsplash.com/photo-1526481280698-8fcc13fd6a42?q=80&w=1400&auto=format&fit=crop",
+  },
+  {
+    id: "c2",
+    title: "Cafés instagramáveis em Buenos Aires",
+    author: "Gustavo R.",
+    minutes: 3,
+    image:
+      "https://images.unsplash.com/photo-1498804103079-a6351b050096?q=80&w=1400&auto=format&fit=crop",
+  },
+  {
+    id: "c3",
+    title: "Melhores mirantes do Rio de Janeiro (2025)",
+    author: "Layabghiyan",
+    minutes: 2,
+    image:
+      "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1400&auto=format&fit=crop",
+  },
+];
+
+// Promoção
+const promo = {
+  title: "Promoções",
+  subtitle: "Novas ofertas todos os dias",
+  cta: "Ver agora",
+  image:
+    "https://images.unsplash.com/photo-1503602642458-232111445657?q=80&w=1200&auto=format&fit=crop",
+};
+
+// ---------- UTILS ----------
+const Screen = Dimensions.get("window");
+const CARD_W = Math.min(Screen.width * 0.62, 320);
+
+// Feature em pé (altura > largura)
+const FEAT_W = Math.min(Screen.width * 0.56, 260);
+const FEAT_H = Math.round(FEAT_W * 1.5);
+
+// Próximos (carrossel)
+const UPC_W = Math.min(Screen.width * 0.78, 320);
+const UPC_H = 90;
+
+// Comunidade (carrossel)
+const COM_W = Math.min(Screen.width * 0.84, 360);
+const COM_H = 260;
+
+function toDots(n: number): boolean[] {
+  const round = Math.round(n);
+  return new Array(5).fill(false).map((_, i) => i < round);
 }
 
-type PlacesTab = 'hotels' | 'restaurants';
-type BottomTab = 'home' | 'discover' | 'trips' | 'profile';
-
-// ---------------- Utils ----------------
-function hexOpacity(hex: string, alpha: number = 0.15): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-const shadow = (elev: number = 12): ViewStyle => ({
-  elevation: elev, // Android
-  shadowColor: '#000', // iOS/Web
-  shadowOpacity: 0.16,
-  shadowOffset: { width: 0, height: Math.max(2, Math.round(elev / 2)) },
-  shadowRadius: Math.max(4, elev),
-});
-
-function BlockableView({
-  blocked,
-  style,
-  children,
+// ---------- UI ----------
+const SectionHeader = ({
+  title,
+  action,
+  styles,
 }: {
-  blocked: boolean;
-  style?: StyleProp<ViewStyle>;
-  children: React.ReactNode;
-}) {
-  if (Platform.OS === 'web') {
-    const webPE: any = { pointerEvents: blocked ? 'none' : 'auto' };
-    return <View style={[style, webPE]}>{children}</View>;
-  }
+  title: string;
+  action?: { label: string; onPress: () => void };
+  styles: any;
+}) => (
+  <View style={styles.sectionHeader}>
+    <Text style={styles.h2}>{title}</Text>
+    {action && (
+      <Pressable onPress={action.onPress} hitSlop={6}>
+        <Text style={[styles.textMuted, { fontWeight: "600", color: ACCENT }]}>
+          {action.label}
+        </Text>
+      </Pressable>
+    )}
+  </View>
+);
+
+const RatingDots = ({ value }: { value: number }) => {
+  const dots = useMemo(() => toDots(value), [value]);
   return (
-    <View pointerEvents={blocked ? 'none' : 'auto'} style={style}>
-      {children}
-    </View>
-  );
-}
-
-// ---- Safe avatar ----
-const DEFAULT_AVATAR = 'https://i.pravatar.cc/120?img=12';
-function SafeAvatar({ uri = DEFAULT_AVATAR, size = 44 }: { uri?: string; size?: number }) {
-  const [ok, setOk] = useState(true);
-  const radius = size / 2;
-  return (
-    <View
-      style={{
-        height: size,
-        width: size,
-        borderRadius: radius,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-        backgroundColor: '#f3f4f6',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      {ok ? (
-        <Image source={{ uri }} onError={() => setOk(false)} resizeMode="cover" style={{ height: '100%', width: '100%' }} />
-      ) : (
-        <Ionicons name="person-circle-outline" size={Math.round(radius * 1.2)} color="#9ca3af" />
-      )}
-    </View>
-  );
-}
-
-// ---- Card shell (garante sombra arredondada no Android) ----
-function CardShell({
-  children,
-  radius = 24,
-  elevation = 10,
-  style,
-  border = true,
-}: {
-  children: React.ReactNode;
-  radius?: number;
-  elevation?: number;
-  style?: StyleProp<ViewStyle>;
-  border?: boolean;
-}) {
-  const outer: ViewStyle = {
-    borderRadius: radius,
-    backgroundColor: '#fff',
-    ...shadow(elevation),
-    ...(Platform.OS === 'android'
-      ? {
-          borderTopLeftRadius: radius,
-          borderTopRightRadius: radius,
-          borderBottomLeftRadius: radius,
-          borderBottomRightRadius: radius,
-        }
-      : null),
-  };
-  return (
-    <View style={[outer, style]}>
-      <View style={{ borderRadius: radius, backgroundColor: '#fff' }}>
-        <View style={{ borderRadius: radius, overflow: 'hidden', borderWidth: border ? 1 : 0, borderColor: '#e5e7eb' }}>
-          {children}
-        </View>
-      </View>
-    </View>
-  );
-}
-
-// ---------------- Data ----------------
-const trips: Trip[] = [
-  { title: 'Mount Aconcagua – Circuito completo', subtitle: 'South America', price: '$1,250', city: 'Mendoza, AR', img: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?q=80&w=1200&auto=format&fit=crop' },
-  { title: 'Rio de Janeiro — Pão de Açúcar + Cristo Redentor', subtitle: 'Brazil', price: '$980', city: 'Rio, BR', img: 'https://images.unsplash.com/photo-1544989164-31dc3c645987?q=80&w=1200&auto=format&fit=crop' },
-  { title: 'Cusco & Machu Picchu', subtitle: 'Peru', price: '$1,420', city: 'Cusco, PE', img: 'https://images.unsplash.com/photo-1546530967-21531b891dd4?q=80&w=1200&auto=format&fit=crop' },
-  { title: 'Torres del Paine', subtitle: 'Chile', price: '$1,150', city: 'Puerto Natales, CL', img: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=1200&auto=format&fit=crop' },
-  { title: 'Salar de Uyuni (Expedição 3 dias)', subtitle: 'Bolivia', price: '$890', city: 'Uyuni, BO', img: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1200&auto=format&fit=crop' },
-  { title: 'Deserto do Atacama', subtitle: 'Chile', price: '$960', city: 'San Pedro de Atacama, CL', img: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop' },
-  { title: 'Cartagena das Índias', subtitle: 'Colombia', price: '$820', city: 'Cartagena, CO', img: 'https://images.unsplash.com/photo-1520975916090-3105956dac38?q=80&w=1200&auto=format&fit=crop' },
-  { title: 'Fernando de Noronha', subtitle: 'Brazil', price: '$1,480', city: 'Pernambuco, BR', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200&auto=format&fit=crop' },
-];
-
-const hotels = [
-  { id: 'h1', title: 'Deep River', img: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=1200&auto=format&fit=crop', price: '$110 / night' },
-  { id: 'h2', title: 'Arabella', img: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=1200&auto=format&fit=crop', price: '$120 / night' },
-  { id: 'h3', title: 'Cyan Resort', img: 'https://images.unsplash.com/photo-1496412705862-e0088f16f791?q=80&w=1200&auto=format&fit=crop', price: '$140 / night' },
-];
-
-// ✅ imagens estáveis
-const restaurants = [
-  { id: 'r1', title: 'Pasta Nostra', img: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?q=80&w=1200&auto=format&fit=crop', price: '$$' },
-  { id: 'r2', title: 'Sushi & Co', img: 'https://images.unsplash.com/photo-1542736667-069246bdbc74?q=80&w=1200&auto=format&fit=crop', price: '$$$' },
-  { id: 'r3', title: 'Choripán House', img: 'https://images.unsplash.com/photo-1550317138-10000687a72b?q=80&w=1200&auto=format&fit=crop', price: '$' },
-  { id: 'r4', title: 'Prime Steak', img: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=1200&auto=format&fit=crop', price: '$$$' },
-  { id: 'r5', title: 'La Pizzeria', img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1200&auto=format&fit=crop', price: '$$' },
-];
-
-const upcomingTrips = [
-  { id: 'u1', date: '24 Nov', title: 'Check-in: Rio de Janeiro', icon: 'calendar' as const },
-  { id: 'u2', date: '02 Dez', title: 'Trilha Aconcágua', icon: 'map' as const },
-  { id: 'u3', date: '15 Dez', title: 'Voo para Cusco', icon: 'airplane' as const },
-];
-
-const quickActions: Action[] = [
-  { key: 'social', label: 'Rede Social' },
-  { key: 'promos', label: 'Promoções' },
-  { key: 'logbook', label: 'Diário de bordo' },
-];
-
-// 👉 ordem mantida; “Cotação” e “Assessoria” são os dois últimos
-const moreActions: Action[] = [
-  { key: 'ai', label: 'Ajuda por IA' },
-  { key: 'itinerary', label: 'Itinerário' },
-  { key: 'gastos', label: 'Gastos' },
-  { key: 'agenda', label: 'Agenda' },
-  { key: 'fotos', label: 'Fotos' },
-  { key: 'expert', label: 'Falar com especialista' },
-  { key: 'currency', label: 'Cotação de moedas' },
-  { key: 'advisory', label: 'Assessoria' }, // ✅ do lado da “Cotação”
-];
-
-const benefits: Benefit[] = [
-  { key: 'culture', title: 'Exposição Cultural', text: 'Descubra tradições, culinárias e estilos de vida diferentes ao redor do mundo.', icon: 'image-multiple-outline' },
-  { key: 'growth', title: 'Crescimento Pessoal', text: 'Planeje melhor, conheça pessoas novas e desenvolva autonomia viajando.', icon: 'star-outline' },
-  { key: 'memories', title: 'Memórias', text: 'Registre fotos e diário de bordo, e guarde momentos para sempre.', icon: 'camera-outline' },
-  { key: 'stress', title: 'Redução do Estresse', text: 'Organize sua viagem com agenda e gastos claros para curtir sem preocupação.', icon: 'calendar-month-outline' },
-];
-
-// ---------------- Small UI bits ----------------
-function Chip({ active, children, onPress }: { active: boolean; children: React.ReactNode; onPress?: () => void }) {
-  return (
-    <TouchableOpacity onPress={onPress} style={[styles.chip, { borderColor: active ? BRAND : '#e5e7eb', backgroundColor: active ? BRAND : 'transparent' }]}>
-      <Text style={{ color: active ? '#fff' : '#4b5563', fontSize: 14 }}>{children}</Text>
-    </TouchableOpacity>
-  );
-}
-
-function IconPill({ children }: { children: React.ReactNode }) {
-  return <View style={[styles.iconPill, shadow(8)]}>{typeof children === 'string' ? <Text style={{ fontSize: 16 }}>{children}</Text> : children}</View>;
-}
-
-function SafeImage({ uri, alt }: { uri: string; alt?: string }) {
-  const [ok, setOk] = useState<boolean>(true);
-  return ok ? (
-    <Image source={{ uri }} onError={() => setOk(false)} resizeMode="cover" style={{ width: '100%', height: '100%' }} accessibilityLabel={alt || 'image'} />
-  ) : (
-    <View style={{ flex: 1, backgroundColor: hexOpacity(BRAND, 0.25), alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ color: BRAND, fontWeight: '700' }}>{alt || 'EasyTrip'}</Text>
-    </View>
-  );
-}
-
-// ❤️ Like (coração) com animação
-function LikePill() {
-  const [liked, setLiked] = useState(false);
-  const scale = useRef(new Animated.Value(1)).current;
-
-  const onPress = () => {
-    Animated.sequence([
-      Animated.timing(scale, { toValue: 0.85, duration: 90, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      Animated.spring(scale, { toValue: 1, friction: 4, useNativeDriver: true }),
-    ]).start();
-    setLiked((v) => !v);
-  };
-
-  return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
-      <Animated.View style={[styles.iconPill, shadow(8), { transform: [{ scale }] }]}>
-        {liked ? <Ionicons name="heart" size={16} color="#ef4444" /> : <Ionicons name="heart-outline" size={16} color="#111" />}
-      </Animated.View>
-    </TouchableOpacity>
-  );
-}
-
-// 🏳️ Bandeira/Bookmark com animação (preenche ao tocar)
-function FlagPill() {
-  const [flagged, setFlagged] = useState(false);
-  const scale = useRef(new Animated.Value(1)).current;
-
-  const onPress = () => {
-    Animated.sequence([
-      Animated.timing(scale, { toValue: 0.85, duration: 90, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      Animated.spring(scale, { toValue: 1, friction: 4, useNativeDriver: true }),
-    ]).start();
-    setFlagged((v) => !v);
-  };
-
-  return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
-      <Animated.View style={[styles.iconPill, shadow(8), { transform: [{ scale }] }]}>
-        {flagged ? <Ionicons name="bookmark" size={16} color={BRAND} /> : <Ionicons name="bookmark-outline" size={16} color="#111" />}
-      </Animated.View>
-    </TouchableOpacity>
-  );
-}
-
-// ---------------- Icon helpers ----------------
-function actionIcon(key: ActionKey, color: string) {
-  switch (key) {
-    case 'social':
-      return <Ionicons name="chatbubbles-outline" size={18} color={color} />;
-    case 'promos':
-      return <Ionicons name="pricetags-outline" size={18} color={color} />;
-    case 'logbook':
-      return <Ionicons name="book-outline" size={18} color={color} />;
-    case 'ai':
-      return <Ionicons name="sparkles-outline" size={18} color={color} />;
-    case 'itinerary':
-      return <Ionicons name="map-outline" size={18} color={color} />;
-    case 'gastos':
-      return <Ionicons name="wallet-outline" size={18} color={color} />;
-    case 'agenda':
-      return <Ionicons name="calendar-outline" size={18} color={color} />;
-    case 'fotos':
-      return <Ionicons name="camera-outline" size={18} color={color} />;
-    case 'expert':
-      return <Ionicons name="logo-whatsapp" size={18} color={color} />;
-    case 'currency':
-      return <Ionicons name="cash-outline" size={18} color={color} />;
-    case 'advisory':
-      return <Ionicons name="headset-outline" size={18} color={color} />; // ✅ Assessoria
-    default:
-      return <Ionicons name="ellipse-outline" size={18} color={color} />;
-  }
-}
-
-function benefitIcon(name: string, color: string) {
-  return <MaterialCommunityIcons name={name as any} size={18} color={color} />;
-}
-
-function upcomingIcon(kind: 'calendar' | 'map' | 'airplane', color: string) {
-  if (kind === 'map') return <Ionicons name="map-outline" size={18} color={color} />;
-  if (kind === 'airplane') return <Ionicons name="airplane-outline" size={18} color={color} />;
-  return <Ionicons name="calendar-outline" size={18} color={color} />;
-}
-
-// ---------------- SearchBar (com dropdown animado) ----------------
-function SearchBar() {
-  const [value, setValue] = useState('');
-  const [open, setOpen] = useState(false);
-
-  const fade = useRef(new Animated.Value(0)).current;
-  const slide = useRef(new Animated.Value(-8)).current;
-
-  const [type, setType] = useState<'todos' | 'hotels' | 'restaurants'>('todos');
-  const [price, setPrice] = useState<'$' | '$$' | '$$$' | null>(null);
-  const [openNow, setOpenNow] = useState(false);
-
-  const toggleDropdown = () => {
-    if (open) {
-      Animated.parallel([
-        Animated.timing(fade, { toValue: 0, duration: 120, useNativeDriver: true }),
-        Animated.timing(slide, { toValue: -8, duration: 120, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      ]).start(() => setOpen(false));
-    } else {
-      setOpen(true);
-      Animated.parallel([
-        Animated.timing(fade, { toValue: 1, duration: 160, useNativeDriver: true }),
-        Animated.timing(slide, { toValue: 0, duration: 160, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      ]).start();
-    }
-  };
-
-  const applyFilters = () => {
-    Alert.alert('Filtros aplicados', `Tipo: ${type}\nPreço: ${price ?? 'qualquer'}\nAberto agora: ${openNow ? 'sim' : 'não'}`);
-    toggleDropdown();
-  };
-
-  const clearFilters = () => {
-    setType('todos');
-    setPrice(null);
-    setOpenNow(false);
-  };
-
-  return (
-    <View style={{ position: 'relative' }}>
-      <View style={styles.searchBar}>
-        <Ionicons name="search-outline" size={18} color="#6b7280" style={{ marginRight: 8 }} />
-        <TextInput
-          value={value}
-          onChangeText={setValue}
-          placeholder="Buscar destinos, cidades..."
-          placeholderTextColor="#9ca3af"
-          style={styles.searchInput}
-          returnKeyType="search"
-        />
-        <TouchableOpacity onPress={toggleDropdown} style={styles.filterPill}>
-          <Text style={styles.filterPillText}>Filtros</Text>
-        </TouchableOpacity>
-      </View>
-
-      {open && (
-        <Animated.View
-          style={[
-            styles.dropdown,
-            shadow(14),
-            {
-              opacity: fade,
-              transform: [{ translateY: slide }],
-            },
-          ]}
-        >
-          <Text style={styles.dropdownTitle}>Filtros</Text>
-
-          <View style={styles.dropdownRow}>
-            <Text style={styles.dropdownLabel}>Tipo</Text>
-            <View style={styles.dropdownChips}>
-              {(['todos', 'hotels', 'restaurants'] as const).map((t) => (
-                <TouchableOpacity
-                  key={t}
-                  onPress={() => setType(t)}
-                  style={[
-                    styles.ddChip,
-                    t === type && { backgroundColor: hexOpacity(BRAND, 0.15), borderColor: BRAND },
-                  ]}
-                >
-                  <Text style={[styles.ddChipText, t === type && { color: BRAND, fontWeight: '700' }]}>
-                    {t === 'todos' ? 'Todos' : t === 'hotels' ? 'Hotéis' : 'Restaurantes'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.dropdownRow}>
-            <Text style={styles.dropdownLabel}>Preço</Text>
-            <View style={styles.dropdownChips}>
-              {(['$', '$$', '$$$'] as const).map((p) => (
-                <TouchableOpacity
-                  key={p}
-                  onPress={() => setPrice((prev) => (prev === p ? null : p))}
-                  style={[
-                    styles.ddChip,
-                    price === p && { backgroundColor: hexOpacity(BRAND, 0.15), borderColor: BRAND },
-                  ]}
-                >
-                  <Text style={[styles.ddChipText, price === p && { color: BRAND, fontWeight: '700' }]}>{p}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <TouchableOpacity
-            onPress={() => setOpenNow((v) => !v)}
-            style={[styles.rowBetween, { paddingVertical: 8 }]}
-          >
-            <Text style={styles.dropdownLabel}>Aberto agora</Text>
-            <View
-              style={{
-                height: 20,
-                width: 36,
-                borderRadius: 999,
-                borderWidth: 1,
-                borderColor: openNow ? BRAND : '#e5e7eb',
-                backgroundColor: openNow ? hexOpacity(BRAND, 0.2) : '#fff',
-                alignItems: openNow ? 'flex-end' : 'flex-start',
-                padding: 2,
-              }}
-            >
-              <View
-                style={{
-                  height: 14,
-                  width: 14,
-                  borderRadius: 7,
-                  backgroundColor: openNow ? BRAND : '#9ca3af',
-                }}
-              />
-            </View>
-          </TouchableOpacity>
-
-          <View style={[styles.rowBetween, { marginTop: 10 }]}>
-            <TouchableOpacity onPress={clearFilters} style={[styles.btnOutline, { borderColor: '#e5e7eb' }]}>
-              <Text style={{ color: '#374151', fontWeight: '700' }}>Limpar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={applyFilters} style={styles.btnSolid}>
-              <Text style={{ color: '#fff', fontWeight: '800' }}>Aplicar</Text>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-      )}
-    </View>
-  );
-}
-
-// ---------------- Cards ----------------
-// Overlap/Stack cards no estilo do mock (inclinação + glass panel)
-function OverlapCard({
-  trip,
-  index,
-  activeIndex,
-  onSelect,
-}: {
-  trip: Trip;
-  index: number;
-  activeIndex: number;
-  onSelect: (index: number) => void;
-}) {
-  const offset = index - activeIndex;
-  if (Math.abs(offset) > VISIBLE_RANGE) return null;
-
-  const depth = Math.abs(offset);
-  const scale = Math.max(0.88, 1 - depth * 0.07);
-  const translateX = offset * 26;
-  const translateY = depth * 18 + (offset !== 0 ? 8 : 0);
-  const rotate = offset === 0 ? '0deg' : `${offset > 0 ? 7 : -7}deg`;
-  const z = 100 - depth;
-
-  const baseStyle: ViewStyle = {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    transform: [{ translateX }, { translateY }, { scale }, { rotate }],
-    zIndex: z,
-    width: '100%',
-  };
-
-  const dimAlpha = depth === 0 ? 0.22 : 0.38;
-  const sideTint = offset === 0 ? 'transparent' : offset < 0 ? 'rgba(80,140,255,0.18)' : 'rgba(255,120,120,0.18)';
-
-  return (
-    <BlockableView blocked={depth > 1} style={baseStyle}>
-      <TouchableOpacity activeOpacity={0.9} onPress={() => onSelect(index)}>
-        <CardShell radius={26} elevation={16}>
-          <View style={{ position: 'relative', height: 288, width: '100%', backgroundColor: '#000' }}>
-            <SafeImage uri={trip.img} alt={trip.title} />
-            <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: `rgba(0,0,0,${dimAlpha})` }} />
-            {depth > 0 && <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: sideTint }} />}
-
-            {/* top pills */}
-            <View style={{ position: 'absolute', top: 16, left: 16, right: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ opacity: 0.9 }}>
-                {/* 🏳️ Flag animada */}
-                <FlagPill />
-              </View>
-              <View style={{ opacity: 0.9 }}>
-                {/* ❤️ Like animado */}
-                <LikePill />
-              </View>
-            </View>
-
-            {/* glass panel no rodapé */}
-            <View style={styles.glassBox}>
-              <View style={{ flex: 1, paddingRight: 12 }}>
-                <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }} numberOfLines={1}>
-                  {trip.title}
-                </Text>
-                <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12 }} numberOfLines={1}>
-                  {trip.subtitle} • {trip.city}
-                </Text>
-              </View>
-              <TouchableOpacity onPress={() => Alert.alert(`Abrir detalhes de ${trip.title}`)} style={styles.glassBtn}>
-                <Ionicons name="time-outline" size={18} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </CardShell>
-      </TouchableOpacity>
-    </BlockableView>
-  );
-}
-
-const MiniTile = React.memo(function MiniTile({ title, img, price }: { title: string; img: string; price?: string }) {
-  return (
-    <CardShell radius={16} elevation={10} style={{ width: 220 }}>
-      <View>
-        <View style={{ height: 120, width: '100%' }}>
-          <SafeImage uri={img} alt={title} />
-        </View>
-        <View style={{ padding: 12 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View
-              style={{
-                height: 20,
-                width: 20,
-                borderRadius: 10,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: hexOpacity(BRAND, 0.12),
-                marginRight: 8,
-              }}
-            >
-              <Ionicons name="star" size={12} color={BRAND} />
-            </View>
-            <Text style={{ color: '#374151', fontSize: 14 }}>5.0</Text>
-          </View>
-          <Text style={{ marginTop: 4, color: '#111827', fontWeight: '600' }} numberOfLines={1} ellipsizeMode="tail">
-            {title}
-          </Text>
-          {!!price && <Text style={{ color: '#6b7280', fontSize: 12 }}>From {price}</Text>}
-        </View>
-      </View>
-    </CardShell>
-  );
-});
-
-function UpcomingItem({ date, title, icon }: { date: string; title: string; icon: 'calendar' | 'map' | 'airplane' }) {
-  return (
-    <CardShell radius={16} elevation={10} style={{ width: 260 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12 }}>
+    <View style={{ flexDirection: "row", gap: 4, alignItems: "center" }}>
+      {dots.map((f, idx) => (
         <View
+          key={idx}
           style={{
-            height: 36,
-            width: 36,
-            borderRadius: 12,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: hexOpacity(BRAND, 0.12),
-            marginRight: 12,
+            width: 8,
+            height: 8,
+            borderRadius: 999,
+            backgroundColor: f ? ACCENT : "#2E3238",
           }}
-        >
-          {upcomingIcon(icon, BRAND)}
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 12, color: '#6b7280' }}>{date}</Text>
-          <Text style={{ fontSize: 14, color: '#111827', fontWeight: '600' }} numberOfLines={1} ellipsizeMode="tail">
-            {title}
-          </Text>
-        </View>
-      </View>
-    </CardShell>
-  );
-}
-
-function CommunityCarousel() {
-  const posts: { id: number; title: string; author: string; minutes: number; img: string }[] = [
-    { id: 1, title: 'Melhores mirantes do Rio de Janeiro (2025)', author: 'Layabghiyan', minutes: 2, img: 'https://images.unsplash.com/photo-1491555103944-7c647fd857e6?q=80&w=1200&auto=format&fit=crop' },
-    { id: 2, title: 'Trilhas imperdíveis em Cusco', author: 'Mariana P.', minutes: 4, img: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1200&auto=format&fit=crop' },
-    { id: 3, title: 'Cafés instagramáveis em Buenos Aires', author: 'Gustavo R.', minutes: 3, img: 'https://images.unsplash.com/photo-1453614512568-c4024d13c247?q=80&w=1200&auto=format&fit=crop' },
-  ];
-
-  return (
-    <View style={{ marginTop: 24 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Text style={{ fontWeight: '700', color: '#111827', fontSize: 18 }}>Da comunidade</Text>
-        <TouchableOpacity onPress={() => Alert.alert('Ver mais posts')}>
-          <Text style={{ color: BRAND, fontSize: 14 }}>Ver mais</Text>
-        </TouchableOpacity>
-      </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingLeft: CAROUSEL_PAD_H, paddingRight: CAROUSEL_PAD_H, paddingBottom: CAROUSEL_PAD_B }}
-      >
-        {posts.map((p) => (
-          <View key={p.id} style={{ marginRight: 16 }}>
-            <CardShell radius={24} elevation={10} style={{ width: 288, minWidth: 260 }}>
-              <View>
-                <View style={{ height: 160, width: '100%' }}>
-                  <SafeImage uri={p.img} alt={p.title} />
-                  <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.3)' }} />
-                  <View style={{ position: 'absolute', left: 12, right: 12, bottom: 12 }}>
-                    <Text style={{ color: '#fff', fontSize: 12, opacity: 0.9 }}>Da comunidade</Text>
-                    <Text style={{ color: '#fff', fontWeight: '700', lineHeight: 22, fontSize: 18 }} numberOfLines={2} ellipsizeMode="tail">
-                      {p.title}
-                    </Text>
-                  </View>
-                </View>
-                <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 14, color: '#4b5563' }}>
-                    Por <Text style={{ color: '#111827', fontWeight: '600' }}>{p.author}</Text> • {p.minutes} min
-                  </Text>
-                  <TouchableOpacity onPress={() => Alert.alert(`Abrir: ${p.title}`)} style={[styles.btnOutlineSm, { borderColor: BRAND }]}>
-                    <Text style={{ color: BRAND, fontSize: 12, fontWeight: '700' }}>Ler</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </CardShell>
-          </View>
-        ))}
-      </ScrollView>
+        />
+      ))}
     </View>
   );
-}
+};
 
-function BenefitCard({ icon, title, text }: { icon: string; title: string; text: string }) {
-  return (
-    <CardShell radius={24} elevation={6}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
-        <View style={{ height: 36, width: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: hexOpacity(BRAND, 0.1), marginRight: 12 }}>
-          {benefitIcon(icon, '#111')}
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontWeight: '700', color: '#111827' }} numberOfLines={1} ellipsizeMode="tail">
-            {title}
-          </Text>
-          <Text style={{ color: '#4b5563', fontSize: 13, marginTop: 4 }} numberOfLines={2} ellipsizeMode="tail">
-            {text}
-          </Text>
-        </View>
-      </View>
-    </CardShell>
-  );
-}
+const HeartButton = ({ active, onToggle }: { active: boolean; onToggle: () => void }) => (
+  <Pressable onPress={onToggle} style={ss.heartBtnOverlay}>
+    <Ionicons name={active ? "heart" : "heart-outline"} size={20} color={active ? "#fff" : "#0F1720"} />
+  </Pressable>
+);
 
-function AboutSection() {
-  return (
-    <View style={{ marginTop: 24 }}>
-      <Text style={{ fontSize: 26, fontWeight: '800', color: '#111827', lineHeight: 30 }}>
-        Prepare-se para uma <Text style={{ color: BRAND }}>aventura inesquecível</Text>
+const SmallCard = ({
+  item,
+  fav,
+  onToggleFav,
+  styles,
+}: {
+  item: CardItem;
+  fav: boolean;
+  onToggleFav: () => void;
+  styles: any;
+}) => (
+  <View style={[styles.card, { width: CARD_W }]}>
+    <ImageBackground
+      source={{ uri: item.image }}
+      style={styles.cardImage}
+      imageStyle={{ borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
+    >
+      {item.badge && (
+        <View style={styles.badge}>
+          <Text style={{ color: "#0A0A0B", fontWeight: "800" }}>{item.badge}</Text>
+        </View>
+      )}
+      <HeartButton active={fav} onToggle={onToggleFav} />
+    </ImageBackground>
+
+    <View style={{ padding: 12, gap: 6 }}>
+      <Text numberOfLines={1} style={styles.cardTitle}>
+        {item.title}
       </Text>
-      <Text style={{ color: '#4b5563', fontSize: 13, marginTop: 8 }}>
-        Com a EasyTrip você planeja itinerários, controla gastos, registra memórias e encontra promoções — tudo em um só lugar. Explore novos destinos, aproveite boa comida e viva experiências únicas.
-      </Text>
-      <View style={{ marginTop: 16 }}>
-        {benefits.map((b) => (
-          <View key={b.key} style={{ marginBottom: 12 }}>
-            <BenefitCard icon={b.icon} title={b.title} text={b.text} />
-          </View>
-        ))}
+
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Text style={[styles.text, { fontWeight: "700" }]}>{item.rating.toFixed(1)}</Text>
+        <RatingDots value={item.rating} />
+        {item.reviews != null && <Text style={styles.textMuted}>({item.reviews.toLocaleString()})</Text>}
       </View>
+
+      {item.location && (
+        <Text numberOfLines={1} style={styles.textMuted}>
+          {item.location}
+        </Text>
+      )}
+
+      {item.price && <Text style={[styles.text, { marginTop: 2 }]}>{item.price}</Text>}
     </View>
-  );
-}
+  </View>
+);
 
-// ---------------- Page ----------------
-export default function Index() {
-  const [active, setActive] = useState<number>(0);
-  const [bottomTab, setBottomTab] = useState<BottomTab>('home');
-  const [placesTab, setPlacesTab] = useState<PlacesTab>('hotels');
+// Feature card em pé
+const FeatureCard = ({ item, styles }: { item: FeatureItem; styles: any }) => (
+  <Pressable style={styles.featureCard}>
+    <ImageBackground
+      source={{ uri: item.image }}
+      style={{ flex: 1 }}
+      imageStyle={{ borderRadius: 16 }}
+    >
+      <View style={styles.featureScrim} />
+      <View style={{ position: "absolute", left: 12, right: 12, top: 12, flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <View style={styles.featurePill}>
+          <Ionicons name={item.icon} size={14} color="#0A0A0B" />
+        </View>
+        <Text style={{ color: "#E5E7EB", fontSize: 12 }}>Ferramenta EasyTrip</Text>
+      </View>
+      <View style={{ position: "absolute", left: 12, right: 12, bottom: 12 }}>
+        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 18 }}>{item.title}</Text>
+        {item.subtitle && <Text style={{ color: "#F3F4F6", fontSize: 13, marginTop: 2 }}>{item.subtitle}</Text>}
+      </View>
+    </ImageBackground>
+  </Pressable>
+);
 
-  const deckHeight = Math.min(300, Math.round(SCREEN_H * 0.44));
+// Próximos (agenda)
+const UpcomingCard = ({ item, styles }: { item: UpcomingItem; styles: any }) => (
+  <Pressable style={styles.upcCard}>
+    <View style={styles.upcIconPill}>
+      <Ionicons name={item.icon} size={18} color={ACCENT} />
+    </View>
+    <View style={{ flex: 1 }}>
+      <Text style={[styles.textMuted, { fontWeight: "700" }]}>{item.dateLabel}</Text>
+      <Text numberOfLines={1} style={[styles.text, { fontWeight: "800", fontSize: 16 }]}>{item.title}</Text>
+    </View>
+  </Pressable>
+);
 
-  // ✅ Swipe: PanResponder para trocar os cards do deck
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_evt, gestureState) => {
-        const { dx, dy } = gestureState;
-        return Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy);
-      },
-      onPanResponderRelease: (_evt, gestureState) => {
-        const { dx } = gestureState;
-        if (dx > SWIPE_THRESHOLD) {
-          goPrev();
-        } else if (dx < -SWIPE_THRESHOLD) {
-          goNext();
-        }
-      },
-    })
-  ).current;
+// Comunidade (post)
+const CommunityCard = ({ post, styles }: { post: CommunityPost; styles: any }) => (
+  <Pressable style={styles.comCard}>
+    <ImageBackground
+      source={{ uri: post.image }}
+      style={{ height: COM_H * 0.62 }}
+      imageStyle={{ borderTopLeftRadius: 18, borderTopRightRadius: 18 }}
+    >
+      <View style={styles.comScrim} />
+      <View style={{ position: "absolute", left: 12, right: 12, bottom: 12 }}>
+        <Text style={{ color: "#E5E7EB", fontWeight: "700" }}>Da comunidade</Text>
+        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 20 }} numberOfLines={2}>
+          {post.title}
+        </Text>
+      </View>
+    </ImageBackground>
 
-  const onAction = (key: ActionKey) => {
-    const labels: Record<ActionKey, string> = {
-      social: 'Abrir rede social de viagens',
-      promos: 'Ver promoções diárias',
-      logbook: 'Abrir diário de bordo',
-      ai: 'Abrir assistente de IA (ChatGPT)',
-      itinerary: 'Criar itinerário',
-      gastos: 'Gestão de gastos',
-      agenda: 'Abrir agenda',
-      fotos: 'Abrir câmera / galeria',
-      expert: 'Falar com especialista via WhatsApp',
-      currency: 'Ver cotação de moedas',
-      advisory: 'Abrir assessoria', // ✅ novo
-    };
-    Alert.alert(labels[key] || (key as string));
+    <View style={{ padding: 14, paddingTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+      <Text style={[styles.textMuted]}>
+        Por <Text style={{ fontWeight: "800", color: styles.text.color }}>{post.author}</Text> • {post.minutes} min
+      </Text>
+      <Pressable style={styles.ghostCta}>
+        <Text style={{ color: ACCENT, fontWeight: "700" }}>Ler</Text>
+      </Pressable>
+    </View>
+  </Pressable>
+);
+
+// Promo (card único)
+const PromoCard = ({ styles }: { styles: any }) => (
+  <Pressable style={styles.promoCard}>
+    <View style={{ flex: 1, padding: 16, gap: 8 }}>
+      <Text style={{ color: ACCENT, fontWeight: "800" }}>Promoções</Text>
+      <Text style={[styles.text, { fontSize: 18, fontWeight: "800", lineHeight: 22 }]}>
+        Novas ofertas todos os dias
+      </Text>
+      <Pressable style={styles.ghostCta}>
+        <Text style={{ color: ACCENT, fontWeight: "700" }}>Ver agora</Text>
+      </Pressable>
+    </View>
+    <Image
+      source={{ uri: promo.image }}
+      style={{ width: 130, height: 96, borderRadius: 12, marginRight: 16 }}
+    />
+  </Pressable>
+);
+
+// ---------- HEADER ----------
+const Header = ({
+  theme,
+  styles,
+  onToggleTheme,
+  isDark,
+}: {
+  theme: Theme;
+  styles: any;
+  onToggleTheme: () => void;
+  isDark: boolean;
+}) => {
+  const topInset = Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) : 0;
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState<string | null>(null);
+
+  const opts: Record<string, string[]> = {
+    Sort: ["Top rated", "Lower price", "Nearby"],
+    When: ["Anytime", "This week", "This month"],
+    "Stay type": ["Hotel", "Home", "Villa"],
+    "Add Guest": ["1 guest", "2 guests", "3+ guests"],
   };
 
-  const goPrev = () => setActive((i) => (i - 1 + trips.length) % trips.length);
-  const goNext = () => setActive((i) => (i + 1) % trips.length);
-
-  useEffect(() => {
-    const id = setInterval(() => setActive((i) => (i + 1) % trips.length), 5000);
-    return () => clearInterval(id);
-  }, []);
-
-  const containerW = Platform.OS === 'web' ? Math.min(FRAME_W, SCREEN_W * 0.92) : SCREEN_W;
-  const containerOuterStyle: ViewStyle = Platform.select({
-    web: { width: containerW, borderRadius: 35, backgroundColor: '#fff', overflow: 'visible', borderWidth: 1, borderColor: '#e5e7eb', ...shadow(20) },
-    default: { width: containerW, backgroundColor: '#fff' },
-  }) as ViewStyle;
-
-  const placeData = placesTab === 'hotels' ? hotels : restaurants;
-
-  // 🔢 largura de cada card para garantir 3 por linha
-  const ACTION_W = (containerW - 20 * 2 - 12 * 2) / 3;
-
-  // 🧩 ações + spacer invisível NO FIM se sobrar 2 na última linha (para ficarem nas colunas 1 e 2)
-  const baseActions = [...quickActions, ...moreActions] as Array<Action | { key: '__spacer__'; label?: '' }>;
-  if (baseActions.length % 3 === 2) {
-    // 👉 spacer no FINAL (coluna 3 vazia)
-    baseActions.push({ key: '__spacer__' });
-  }
-
   return (
-    <View style={{ flex: 1, backgroundColor: '#f3f4f6' }}>
-      <View style={[containerOuterStyle]}>
-        <View style={{ height: Platform.OS === 'web' ? 20 : 0 }} />
-
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 160 }} keyboardShouldPersistTaps="handled">
-          {/* Header */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              {/* Logo ✦ mantém original */}
-              <View style={{ height: 32, width: 32, borderRadius: 16, backgroundColor: BRAND, alignItems: 'center', justifyContent: 'center', marginRight: 8 }}>
-                <Text style={{ color: '#fff', fontWeight: '800' }}>✦</Text>
-              </View>
-              <Text style={{ fontWeight: '700', fontSize: 16 }}>EasyTrip</Text>
+    <View style={{ backgroundColor: theme.bg }}>
+      <View style={[styles.headerLightWrap, { paddingTop: topInset + 8 }]}>
+        {/* topo */}
+        <View style={styles.headerLightTop}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <View style={styles.logoCircle}>
+              <Text style={styles.logoStar}>✦</Text>
             </View>
-            <SafeAvatar />
+            <Text style={styles.brandLight}>EasyTrip</Text>
           </View>
+        <Pressable style={styles.bellBtn} hitSlop={8} onPress={onToggleTheme}>
+            <Ionicons name={isDark ? "sunny" : "moon"} size={18} color={theme.text} />
+          </Pressable>
+        </View>
 
-          {/* Greeting */}
-          <View style={{ marginTop: 12 }}>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: '#111827', lineHeight: 24 }}>Olá, João Pedro</Text>
-            <Text style={{ color: '#6b7280', fontSize: 13, lineHeight: 20, marginTop: 2 }} numberOfLines={1} ellipsizeMode="tail">
-              Pense no melhor design para sua próxima viagem ✨
-            </Text>
-          </View>
-
-          {/* Search */}
-          <View style={{ marginTop: 16 }}>
-            <SearchBar />
-          </View>
-
-          {/* Title */}
-          <View style={{ marginTop: 20 }}>
-            <Text style={{ fontSize: 28, fontWeight: '800', lineHeight: 32 }}>
-              Encontre o <Text style={{ color: BRAND }}>lugar perfeito</Text>
-            </Text>
-          </View>
-
-          {/* Deck / carousel (look da imagem) - agora com swipe */}
-          <View style={{ marginTop: 24, height: deckHeight + 24 }} {...panResponder.panHandlers}>
-            <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 16 }}>
-              {trips.map((t, i) => (
-                <OverlapCard key={t.title} trip={t} index={i} activeIndex={active} onSelect={setActive} />
-              ))}
-            </View>
-            <View style={{ position: 'absolute', left: -8, top: deckHeight / 2 - 18, flexDirection: 'row' }}>
-              <TouchableOpacity onPress={goPrev} style={[styles.navCircle]}>
-                <Ionicons name="chevron-back" size={18} color="#111" />
-              </TouchableOpacity>
-              <View style={{ width: 8 }} />
-              <TouchableOpacity onPress={goNext} style={[styles.navCircle]}>
-                <Ionicons name="chevron-forward" size={18} color="#111" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Hotels / Restaurants toggle + carousel */}
-          <View style={{ marginTop: 24 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-              <View style={{ marginRight: 8 }}>
-                <Chip active={placesTab === 'hotels'} onPress={() => setPlacesTab('hotels')}>
-                  Hotels
-                </Chip>
-              </View>
-              <Chip active={placesTab === 'restaurants'} onPress={() => setPlacesTab('restaurants')}>
-                Restaurants
-              </Chip>
-            </View>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingLeft: CAROUSEL_PAD_H, paddingRight: CAROUSEL_PAD_H, paddingBottom: CAROUSEL_PAD_B }}
-            >
-              {placeData.map((h) => (
-                <View key={(h as any).id} style={{ marginRight: 12 }}>
-                  <MiniTile title={(h as any).title} img={(h as any).img} price={'price' in h ? (h as any).price : undefined} />
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* Próximos - carousel */}
-          <View style={{ marginTop: 24 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <Text style={{ fontWeight: '700', fontSize: 18 }}>Próximos</Text>
-              <TouchableOpacity onPress={() => Alert.alert('Abrir agenda')}>
-                <Text style={{ color: BRAND, fontSize: 14 }}>Ver agenda</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingLeft: CAROUSEL_PAD_H, paddingRight: CAROUSEL_PAD_H, paddingBottom: CAROUSEL_PAD_B }}
-            >
-              {upcomingTrips.map((u) => (
-                <View key={u.id} style={{ marginRight: 12 }}>
-                  <UpcomingItem date={u.date} title={u.title} icon={u.icon} />
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* Comunidade */}
-          <CommunityCarousel />
-
-          {/* Promotions banner */}
-          <CardShell radius={24} elevation={8} style={{ marginTop: 28 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 }}>
-              <View style={{ flex: 1, paddingRight: 12 }}>
-                <Text style={{ color: BRAND, fontWeight: '700', fontSize: 13 }}>Promoções</Text>
-                <Text style={{ color: '#374151' }} numberOfLines={2} ellipsizeMode="tail">
-                  Novas ofertas todos os dias
-                </Text>
-                <TouchableOpacity onPress={() => Alert.alert('Ver promoções')} style={[styles.btnOutline, { borderColor: BRAND, marginTop: 10, alignSelf: 'flex-start' }]}>
-                  <Text style={{ color: BRAND, fontWeight: '700' }}>Ver agora</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={{ height: 90, width: 140, borderRadius: 16, overflow: 'hidden' }}>
-                <Image source={{ uri: 'https://images.unsplash.com/photo-1534854638093-bada1813ca19?q=80&w=800&auto=format&fit=crop' }} resizeMode="cover" style={{ width: '100%', height: '100%' }} />
-              </View>
-            </View>
-          </CardShell>
-
-          {/* 🔁 No lugar do "Nearby / Recommend / Share" */}
-          <View style={{ marginTop: 24, marginBottom: 8 }}>
-            <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827' }}>Seus atalhos</Text>
-            <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>Acelere seu planejamento com ferramentas úteis</Text>
-          </View>
-
-          {/* Quick + More actions — 3 por linha; última linha com spacer no fim (coluna 3) */}
-          <View style={{ marginTop: 8 }}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-              {baseActions.map((a, idx) => {
-                if ((a as any).key === '__spacer__') {
-                  // coluna 3 vazia
-                  return <View key={`spacer-${idx}`} style={{ width: ACTION_W, marginBottom: 12 }} />;
-                }
-                const act = a as Action;
-                return (
-                  <TouchableOpacity
-                    key={`${act.key}-${idx}`}
-                    onPress={() => onAction(act.key)}
-                    style={[styles.actionCard, shadow(6), { marginBottom: 12, width: ACTION_W }]}
-                  >
-                    <View style={{ height: 36, width: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: hexOpacity(BRAND, 0.12), marginBottom: 8 }}>
-                      {actionIcon(act.key, '#111')}
-                    </View>
-                    <Text style={{ fontSize: 13, fontWeight: '600' }} numberOfLines={2} ellipsizeMode="tail">
-                      {act.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
-          {/* 📦 Benefícios movidos para baixo dos ícones */}
-          <AboutSection />
-        </ScrollView>
-
-        {/* Bottom nav */}
-        <View style={{ position: 'absolute', left: 12, right: 12, bottom: 16 }}>
-          <View style={[{ borderRadius: 24, backgroundColor: '#fff', paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: '#e5e7eb', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, shadow(14)]}>
-            {[
-              { key: 'home', label: 'Home', icon: (active: boolean) => <Ionicons name={active ? 'home' : 'home-outline'} size={18} color={active ? '#fff' : '#6b7280'} /> },
-              { key: 'discover', label: 'Discover', icon: (active: boolean) => <Ionicons name={active ? 'compass' : 'compass-outline'} size={18} color={active ? '#fff' : '#6b7280'} /> },
-              { key: 'trips', label: 'Minhas viagens', icon: (active: boolean) => <Ionicons name={active ? 'briefcase' : 'briefcase-outline'} size={18} color={active ? '#fff' : '#6b7280'} /> },
-              { key: 'profile', label: 'Profile', icon: (active: boolean) => <Ionicons name={active ? 'person' : 'person-outline'} size={18} color={active ? '#fff' : '#6b7280'} /> },
-            ].map((item) => {
-              const isActive = bottomTab === (item.key as BottomTab);
-              return (
-                <TouchableOpacity key={item.key} onPress={() => setBottomTab(item.key as BottomTab)} style={{ alignItems: 'center' }}>
-                  <View style={[styles.navIconCircle, isActive && { backgroundColor: BRAND }]}>{item.icon(isActive)}</View>
-                  <Text style={{ marginTop: 4, fontSize: 12, fontWeight: '600', color: isActive ? BRAND : '#6b7280' }}>{item.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
+        {/* search pill funcional */}
+        <View style={styles.searchPill}>
+          <Ionicons name="search" size={18} color={theme.textMuted} style={{ marginRight: 8 }} />
+          <View style={{ flex: 1 }}>
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Places to go, things to do, hotels..."
+              placeholderTextColor={theme.textMuted}
+              returnKeyType="search"
+              onSubmitEditing={() => console.log("search:", query)}
+              style={{ color: theme.text, fontWeight: "700", padding: 0 }}
+            />
           </View>
         </View>
+
+        {/* chips + dropdowns (carrossel horizontal) */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsCarouselScroll} contentContainerStyle={styles.chipsCarousel}>
+          {Object.keys(opts).map((label) => (
+            <View key={label} style={styles.chipWrap}>
+              <Pressable style={styles.lightChip} onPress={() => setOpen(open === label ? null : label)}>
+                <Text style={{ color: theme.text, fontSize: 12, fontWeight: "600" }}>{label}</Text>
+                <Ionicons name="chevron-down" size={14} color={theme.text} />
+              </Pressable>
+
+              {open === label && (
+                <View style={styles.dropdown}>
+                  {opts[label].map((o) => (
+                    <Pressable key={o} style={styles.dropdownItem} onPress={() => setOpen(null)}>
+                      <Text style={{ color: theme.text }}>{o}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))}
+        </ScrollView>
       </View>
     </View>
   );
+};
+
+// ---------- BOTTOM BAR ----------
+const BottomBar = ({ theme, styles }: { theme: Theme; styles: any }) => {
+  const items = [
+    { key: "explore", label: "Home", icon: "home-outline", activeIcon: "home" },
+    { key: "search", label: "Search", icon: "search-outline", activeIcon: "search" },
+    { key: "trips", label: "Trips", icon: "heart-outline", activeIcon: "heart" },
+    { key: "review", label: "Review", icon: "create-outline", activeIcon: "create" },
+    { key: "account", label: "Account", icon: "person-outline", activeIcon: "person" },
+  ];
+  const activeIndex = 0;
+
+  return (
+    <View style={styles.bottomBarWrap} pointerEvents="box-none">
+      <View style={styles.bottomBar}>
+        {items.map((it, i) => {
+          const active = i === activeIndex;
+          return (
+            <Pressable key={it.key} style={styles.bottomItem}>
+              <Ionicons
+                name={(active ? it.activeIcon : it.icon) as any}
+                size={22}
+                color={active ? ACCENT : "#9CA3AF"}
+              />
+              <Text style={[styles.bottomLabel, { color: active ? theme.text : "#9CA3AF" }]}>
+                {it.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+};
+
+// ---------- MAIN ----------
+export default function Home() {
+  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+  const [isDark, setIsDark] = useState(true);
+
+  const theme = isDark ? DARK : LIGHT;
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const toggleFav = (id: string) => setFavorites((s) => ({ ...s, [id]: !s[id] }));
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={theme.bg} />
+
+      <Header theme={theme} styles={styles} onToggleTheme={() => setIsDark((v) => !v)} isDark={isDark} />
+
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+        <View style={{ paddingHorizontal: 16, gap: 20 }}>
+          {/* Banner */}
+          <ImageBackground
+            source={{ uri: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1400&auto=format&fit=crop" }}
+            style={styles.hero}
+            imageStyle={{ borderRadius: 20 }}
+          >
+            <View style={styles.heroScrim} />
+            <View style={{ position: "absolute", left: 16, bottom: 16, right: 16 }}>
+              <Text style={[styles.text, { opacity: 0.8, marginBottom: 6 }]}>EasyTrip Rewards</Text>
+              <Text style={styles.h1}>Get 5% back on hotels in Bacalar</Text>
+              <Pressable style={styles.cta}><Text style={[styles.text, { fontWeight: "700" }]}>Find a hotel</Text></Pressable>
+            </View>
+          </ImageBackground>
+
+          {/* Hotels */}
+          <SectionHeader title="Get 5% back on top-rated hotels" action={{ label: "View all", onPress: () => {} }} styles={styles} />
+          <FlatList
+            horizontal
+            data={hotels}
+            keyExtractor={(i) => i.id}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 6 }}
+            ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+            renderItem={({ item }) => <SmallCard item={item} fav={!!favorites[item.id]} onToggleFav={() => toggleFav(item.id)} styles={styles} />}
+          />
+
+          {/* Experiences */}
+          <SectionHeader title="Must-do experiences in Bacalar" action={{ label: "View all", onPress: () => {} }} styles={styles} />
+          <FlatList
+            horizontal
+            data={experiences}
+            keyExtractor={(i) => i.id}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 6 }}
+            ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+            renderItem={({ item }) => <SmallCard item={item} fav={!!favorites[item.id]} onToggleFav={() => toggleFav(item.id)} styles={styles} />}
+          />
+
+          {/* Restaurants */}
+          <SectionHeader title="Top restaurants in Bacalar" action={{ label: "View all", onPress: () => {} }} styles={styles} />
+          <FlatList
+            horizontal
+            data={restaurants}
+            keyExtractor={(i) => i.id}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 6 }}
+            ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+            renderItem={({ item }) => <SmallCard item={item} fav={!!favorites[item.id]} onToggleFav={() => toggleFav(item.id)} styles={styles} />}
+          />
+
+          {/* ===== NOVO: Próximos (agenda) ===== */}
+          <SectionHeader title="Próximos" action={{ label: "Ver agenda", onPress: () => {} }} styles={styles} />
+          <FlatList
+            horizontal
+            data={upcoming}
+            keyExtractor={(i) => i.id}
+            showsHorizontalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+            renderItem={({ item }) => <UpcomingCard item={item} styles={styles} />}
+          />
+
+          {/* ===== NOVO: Da comunidade ===== */}
+          <SectionHeader title="Da comunidade" action={{ label: "Ver mais", onPress: () => {} }} styles={styles} />
+          <FlatList
+            horizontal
+            data={community}
+            keyExtractor={(i) => i.id}
+            showsHorizontalScrollIndicator={false}
+            ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+            renderItem={({ item }) => <CommunityCard post={item} styles={styles} />}
+          />
+
+          {/* ===== NOVO: Promoções ===== */}
+          <PromoCard styles={styles} />
+
+          {/* ===== Ferramentas do EasyTrip (em pé) ===== */}
+          <SectionHeader title="Ferramentas do EasyTrip" styles={styles} />
+          <FlatList
+            horizontal
+            data={features}
+            keyExtractor={(i) => i.key}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingVertical: 4 }}
+            ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+            renderItem={({ item }) => <FeatureCard item={item} styles={styles} />}
+          />
+
+          {/* From Editors */}
+          <SectionHeader title="From our editors" styles={styles} />
+          <ImageBackground
+            source={{ uri: "https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1400&auto=format&fit=crop" }}
+            style={{ height: 220, borderRadius: 20, overflow: "hidden" }}
+            imageStyle={{ borderRadius: 20 }}
+          >
+            <View style={styles.editorScrim} />
+            <View style={{ position: "absolute", left: 16, bottom: 16 }}>
+              <Text style={styles.h3}>6 must-visit ghost towns in the American West</Text>
+              <Pressable style={[styles.cta, { marginTop: 8 }]}><Text style={[styles.text, { fontWeight: "700" }]}>Explore</Text></Pressable>
+            </View>
+          </ImageBackground>
+        </View>
+      </ScrollView>
+
+      <BottomBar theme={theme} styles={styles} />
+    </SafeAreaView>
+  );
 }
 
-// ---------------- Styles ----------------
-const styles = StyleSheet.create({
-  chip: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  iconPill: {
-    height: 36,
-    width: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.7)',
-  },
-  btnPillWhite: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-  },
-  btnGo: {
-    height: 40,
-    width: 40,
-    borderRadius: 20,
-    backgroundColor: BRAND,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navCircle: {
-    height: 36,
-    width: 36,
-    borderRadius: 18,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnOutline: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-  },
-  btnOutlineSm: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-  },
-  btnSolid: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 999,
-    backgroundColor: BRAND,
-    borderWidth: 1,
-    borderColor: BRAND,
-  },
-  actionCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#fff',
-    padding: 12,
-  },
-  // --- SearchBar styles ---
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    paddingHorizontal: 12,
-    height: 48,
-  },
-  searchInput: { flex: 1, fontSize: 14, paddingVertical: 0 },
-  filterPill: {
-    height: 28,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: BRAND,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: hexOpacity(BRAND, 0.1),
-    marginLeft: 8,
-  },
-  filterPillText: { color: BRAND, fontWeight: '700', fontSize: 12 },
-  // dropdown
-  dropdown: {
-    position: 'absolute',
-    top: 52,
-    right: 0,
-    width: 260,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    padding: 12,
-    zIndex: 50,
-  },
-  dropdownTitle: { fontWeight: '800', color: '#111827', marginBottom: 6 },
-  dropdownRow: { marginTop: 8 },
-  dropdownLabel: { color: '#374151', fontWeight: '600' },
-  dropdownChips: { flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' } as any,
-  ddChip: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#fff',
-  },
-  ddChipText: { color: '#374151', fontSize: 12 },
-  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+// ---------- STYLES (dinâmicos por tema) ----------
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: theme.bg },
 
-  navIconCircle: {
-    height: 36,
+    text: { color: theme.text },
+    textMuted: { color: theme.textMuted },
+
+    h1: { color: theme.text, fontSize: 24, fontWeight: "800", lineHeight: 28 },
+    h2: { color: theme.text, fontSize: 20, fontWeight: "800" },
+    h3: { color: theme.text, fontSize: 18, fontWeight: "800", lineHeight: 22 },
+
+    // Header
+    headerLightWrap: {
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      backgroundColor: theme.bg,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+      zIndex: 20,
+    },
+    headerLightTop: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 12,
+    },
+    logoCircle: {
+      width: 26,
+      height: 26,
+      borderRadius: 999,
+      backgroundColor: ACCENT,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    logoStar: { color: "#0A0A0B", fontSize: 14, lineHeight: 16, fontWeight: "900" }, // ✦
+    brandLight: { color: theme.text, fontSize: 18, fontWeight: "800", letterSpacing: 0.2 },
+    bellBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.card,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    searchPill: {
+      height: 56,
+      borderRadius: 16,
+      paddingHorizontal: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.card,
+      flexDirection: "row",
+      alignItems: "center",
+    },
+
+    // Chips (carrossel)
+    chipsCarouselScroll: { overflow: "visible" },
+    chipsCarousel: { paddingTop: 10, paddingBottom: 2, paddingRight: 8 },
+    chipWrap: { position: "relative", marginRight: 8, overflow: "visible" },
+    lightChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 999,
+      backgroundColor: theme.card,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    dropdown: {
+      position: "absolute",
+      top: 44,
+      left: 0,
+      right: 0,
+      backgroundColor: theme.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: theme.border,
+      paddingVertical: 6,
+      zIndex: 30,
+      elevation: 8,
+    },
+    dropdownItem: { paddingVertical: 10, paddingHorizontal: 12 },
+
+    // Conteúdo
+    hero: {
+      height: 220,
+      borderRadius: 20,
+      overflow: "hidden",
+      backgroundColor: theme.card,
+    },
+    heroScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.25)" },
+    cta: {
+      marginTop: 10,
+      alignSelf: "flex-start",
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: 999,
+      backgroundColor: ACCENT,
+    },
+
+    sectionHeader: {
+      marginTop: 8,
+      marginBottom: 2,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+
+    // Cards (hotéis/experiências/restaurantes)
+    card: {
+      backgroundColor: theme.cardAlt,
+      borderRadius: 16,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    cardImage: { width: "100%", height: 160, justifyContent: "space-between" },
+    badge: {
+      position: "absolute",
+      left: 10,
+      bottom: 10,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      backgroundColor: "#38F2C1",
+      borderRadius: 10,
+    },
+    cardTitle: { color: theme.text, fontWeight: "800", fontSize: 16 },
+
+    // Próximos
+    upcCard: {
+      width: UPC_W,
+      height: UPC_H,
+      borderRadius: 18,
+      backgroundColor: theme.cardAlt,
+      borderWidth: 1,
+      borderColor: theme.border,
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 14,
+      gap: 12,
+    },
+    upcIconPill: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: Platform.OS === "ios" ? "rgba(56,242,193,0.15)" : "#0F1115",
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+
+    // Comunidade
+    comCard: {
+      width: COM_W,
+      height: COM_H,
+      borderRadius: 18,
+      backgroundColor: theme.cardAlt,
+      borderWidth: 1,
+      borderColor: theme.border,
+      overflow: "hidden",
+    },
+    comScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.28)" },
+
+    // Ghost CTA (bordas verdes)
+    ghostCta: {
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: 999,
+      borderWidth: 1.5,
+      borderColor: ACCENT,
+      backgroundColor: "transparent",
+    },
+
+    // Promoções
+    promoCard: {
+      width: Screen.width - 32,
+      borderRadius: 18,
+      backgroundColor: theme.cardAlt,
+      borderWidth: 1,
+      borderColor: theme.border,
+      flexDirection: "row",
+      alignItems: "center",
+      overflow: "hidden",
+    },
+
+    // Feature cards (em pé)
+    featureCard: {
+      width: FEAT_W,
+      height: FEAT_H,
+      borderRadius: 16,
+      overflow: "hidden",
+      backgroundColor: theme.card,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    featureScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.25)" },
+    featurePill: {
+      alignSelf: "flex-start",
+      backgroundColor: "#38F2C1",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 999,
+    },
+
+    editorScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.35)" },
+
+    // Bottom bar
+    bottomBarWrap: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+    },
+    bottomBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-around",
+      paddingTop: 8,
+      paddingBottom: 12,
+      backgroundColor: theme.bg,
+      borderTopWidth: 1,
+      borderTopColor: theme.border,
+    },
+    bottomItem: { flex: 1, alignItems: "center", justifyContent: "center", gap: 2 },
+    bottomLabel: { fontSize: 11, fontWeight: "600" },
+  });
+
+// Botão de coração sobre a imagem (fixo, não depende do tema)
+const ss = StyleSheet.create({
+  heartBtnOverlay: {
+    position: "absolute",
+    right: 10,
+    top: 10,
     width: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-    overflow: 'hidden',
-  },
-  // glass panel do card principal
-  glassBox: {
-    position: 'absolute',
-    left: 12,
-    right: 12,
-    bottom: 12,
-    padding: 12,
-    borderRadius: 18,
-    backgroundColor: 'rgba(17,17,17,0.72)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  glassBtn: {
-    height: 44,
-    width: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)',
+    height: 36,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
   },
 });
