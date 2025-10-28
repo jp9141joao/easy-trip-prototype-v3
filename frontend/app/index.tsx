@@ -13,25 +13,23 @@ import {
   PanResponder,
   Animated,
   Easing,
-  KeyboardAvoidingView,
-  FlatList,
-  Linking,
 } from 'react-native';
 import type { ViewStyle, StyleProp } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-/* ============================ Theme / Layout ============================ */
+// ---------------- Theme / Layout ----------------
 const BRAND = '#00AF87' as const;
 const FRAME_W = 390;
 const VISIBLE_RANGE = 1;
-const SWIPE_THRESHOLD = 40;
+const SWIPE_THRESHOLD = 40; // deslize mínimo p/ trocar card
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
+// espaçamentos dos carrosséis (MAIOR p/ dar sombra)
 const CAROUSEL_PAD_H = 14;
 const CAROUSEL_PAD_B = Platform.OS === 'android' ? 32 : 24;
 
-/* =============================== Types =============================== */
+// ---------------- Types ----------------
 interface Trip {
   title: string;
   subtitle: string;
@@ -51,7 +49,7 @@ type ActionKey =
   | 'fotos'
   | 'expert'
   | 'currency'
-  | 'advisory';
+  | 'advisory'; // ✅ novo: Assessoria
 
 interface Action {
   key: ActionKey;
@@ -68,7 +66,7 @@ interface Benefit {
 type PlacesTab = 'hotels' | 'restaurants';
 type BottomTab = 'home' | 'discover' | 'trips' | 'profile';
 
-/* =============================== Utils =============================== */
+// ---------------- Utils ----------------
 function hexOpacity(hex: string, alpha: number = 0.15): string {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
@@ -77,11 +75,11 @@ function hexOpacity(hex: string, alpha: number = 0.15): string {
 }
 
 const shadow = (elev: number = 12): ViewStyle => ({
-  elevation: elev,
-  shadowColor: '#000',
-  shadowOpacity: 0.12,
-  shadowOffset: { width: 0, height: Math.max(1, Math.round(elev / 3)) },
-  shadowRadius: Math.max(3, elev * 0.8),
+  elevation: elev, // Android
+  shadowColor: '#000', // iOS/Web
+  shadowOpacity: 0.16,
+  shadowOffset: { width: 0, height: Math.max(2, Math.round(elev / 2)) },
+  shadowRadius: Math.max(4, elev),
 });
 
 function BlockableView({
@@ -104,7 +102,7 @@ function BlockableView({
   );
 }
 
-/* ============================ Small pieces ============================ */
+// ---- Safe avatar ----
 const DEFAULT_AVATAR = 'https://i.pravatar.cc/120?img=12';
 function SafeAvatar({ uri = DEFAULT_AVATAR, size = 44 }: { uri?: string; size?: number }) {
   const [ok, setOk] = useState(true);
@@ -132,6 +130,7 @@ function SafeAvatar({ uri = DEFAULT_AVATAR, size = 44 }: { uri?: string; size?: 
   );
 }
 
+// ---- Card shell (garante sombra arredondada no Android) ----
 function CardShell({
   children,
   radius = 24,
@@ -151,11 +150,11 @@ function CardShell({
     ...shadow(elevation),
     ...(Platform.OS === 'android'
       ? {
-        borderTopLeftRadius: radius,
-        borderTopRightRadius: radius,
-        borderBottomLeftRadius: radius,
-        borderBottomRightRadius: radius,
-      }
+          borderTopLeftRadius: radius,
+          borderTopRightRadius: radius,
+          borderBottomLeftRadius: radius,
+          borderBottomRightRadius: radius,
+        }
       : null),
   };
   return (
@@ -169,7 +168,7 @@ function CardShell({
   );
 }
 
-/* ============================== Data ============================== */
+// ---------------- Data ----------------
 const trips: Trip[] = [
   { title: 'Mount Aconcagua – Circuito completo', subtitle: 'South America', price: '$1,250', city: 'Mendoza, AR', img: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?q=80&w=1200&auto=format&fit=crop' },
   { title: 'Rio de Janeiro — Pão de Açúcar + Cristo Redentor', subtitle: 'Brazil', price: '$980', city: 'Rio, BR', img: 'https://images.unsplash.com/photo-1544989164-31dc3c645987?q=80&w=1200&auto=format&fit=crop' },
@@ -180,254 +179,20 @@ const trips: Trip[] = [
   { title: 'Cartagena das Índias', subtitle: 'Colombia', price: '$820', city: 'Cartagena, CO', img: 'https://images.unsplash.com/photo-1520975916090-3105956dac38?q=80&w=1200&auto=format&fit=crop' },
   { title: 'Fernando de Noronha', subtitle: 'Brazil', price: '$1,480', city: 'Pernambuco, BR', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200&auto=format&fit=crop' },
 ];
-// SUBSTITUA este bloco inteiro
+
 const hotels = [
-  {
-    id: 'h1',
-    title: 'Deep River',
-    img: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=1200&auto=format&fit=crop',
-    price: '$110 / night',
-    gallery: [
-      'https://images.unsplash.com/photo-1551776235-dde6d4829808?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1521783988139-893ce3834f13?q=80&w=1600&auto=format&fit=crop'
-    ],
-    address: 'Av. Atlântica, 1200 - Rio de Janeiro, BR',
-    openingHours: '24h (recepção)',
-    features: ['Piscina', 'Wi-Fi grátis', 'Café da manhã'],
-    priceLabel: 'R$ 550 / noite (média)',
-    rating: 4.8,
-    reviewsCount: 5000,
-    specialty: 'Hotel boutique à beira-mar',
-    specialties: ['Romântico', 'Vista para o mar', 'Design contemporâneo', 'Ideal para casais', 'Work-friendly'],
-    description:
-      'Hotel boutique à beira-mar com quartos recém-renovados e vista para a orla. Ideal para casais e viajantes que buscam conforto com toque contemporâneo.',
-    reviews: [
-      { author: 'Carolina M.', rating: 5, text: 'Quarto impecável e café da manhã delicioso. Localização perfeita para explorar a praia!', time: 'há 2 semanas' },
-      { author: 'Rafael M.', rating: 4.5, text: 'Equipe atenciosa e piscina ótima. Poderia ter mais opções no room service.', time: 'há 1 mês' },
-      { author: 'André M.', rating: 5, text: 'Varanda com vista linda e cama super confortável.', time: 'há 3 semanas' },
-      { author: 'Bruna T.', rating: 4.5, text: 'Check-in rápido e bar de coquetéis excelente.', time: 'há 5 dias' },
-      { author: 'Kátia L.', rating: 4.5, text: 'Ótimo custo/benefício e staff muito educado.', time: 'há 2 meses' },
-      { author: 'Lucas P.', rating: 5, text: 'Quartos silenciosos, isolamento acústico realmente funciona.', time: 'há 3 semanas' },
-      { author: 'Helena R.', rating: 4.5, text: 'Café da manhã com opções sem glúten, adorei!', time: 'há 1 mês' },
-      { author: 'Gustavo A.', rating: 5, text: 'Wi-Fi estável, deu pra trabalhar remoto sem problemas.', time: 'há 2 meses' }
-    ],
-  },
-  {
-    id: 'h2',
-    title: 'Arabella',
-    img: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=1200&auto=format&fit=crop',
-    price: '$120 / night',
-    gallery: [
-      'https://images.unsplash.com/photo-1505691723518-36a5ac3b2d52?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1501117716987-c8e1ecb21032?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?q=80&w=1600&auto=format&fit=crop'
-    ],
-    address: 'R. Augusta, 85 - São Paulo, BR',
-    openingHours: '24h (recepção)',
-    features: ['Academia', 'Spa', 'Bar no lobby'],
-    priceLabel: 'R$ 620 / noite (média)',
-    rating: 4.7,
-    reviewsCount: 3200,
-    specialty: 'Hotel urbano para negócios',
-    specialties: ['Business-friendly', 'Spa & wellness', 'Quartos silenciosos', 'Localização central', 'Café no lobby'],
-    description:
-      'Endereço urbano com design elegante, quartos silenciosos e serviços de bem-estar. Ótimo para viagens de trabalho.',
-    reviews: [
-      { author: 'Marina M.', rating: 4.5, text: 'Quarto confortável e spa maravilhoso. Voltaria com certeza!', time: 'há 3 semanas' },
-      { author: 'Felipe R.', rating: 4, text: 'Localização excelente. Cafezinho do lobby salvou minhas manhãs.', time: 'há 2 meses' },
-      { author: 'Bruno K.', rating: 4.5, text: 'Academia bem equipada e limpa.', time: 'há 1 mês' },
-      { author: 'Aline S.', rating: 5, text: 'Atendimento profissional e rápido, perfeito para negócios.', time: 'há 1 semana' },
-      { author: 'Leandro T.', rating: 4.5, text: 'Quarto silencioso mesmo na Augusta, surpreendeu.', time: 'há 2 semanas' },
-      { author: 'Paula C.', rating: 4, text: 'Cama muito boa, só senti falta de mais tomadas.', time: 'há 3 semanas' },
-      { author: 'Rodrigo N.', rating: 5, text: 'Spa top! Massagem relaxante depois do expediente.', time: 'há 4 dias' },
-      { author: 'Ana Luiza P.', rating: 4.5, text: 'Café da manhã variado, ótimo para começar o dia.', time: 'há 1 mês' }
-    ],
-  },
-  {
-    id: 'h3',
-    title: 'Cyan Resort',
-    img: 'https://images.unsplash.com/photo-1496412705862-e0088f16f791?q=80&w=1200&auto=format&fit=crop',
-    price: '$140 / night',
-    gallery: [
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1505691723518-36a5ac3b2d52?q=80&w=1600&auto=format&fit=crop'
-    ],
-    address: 'Praia do Forte, BA - BR',
-    openingHours: '24h (recepção)',
-    features: ['Beira-mar', 'Piscina aquecida', 'Estacionamento'],
-    priceLabel: 'R$ 780 / noite (média)',
-    rating: 4.9,
-    reviewsCount: 8700,
-    specialty: 'Resort all-family pé na areia',
-    specialties: ['Família', 'Pé na areia', 'Recreação infantil', 'Piscina aquecida', 'Atividades aquáticas'],
-    description:
-      'Resort pé na areia com estrutura completa para famílias e atividades aquáticas.',
-    reviews: [
-      { author: 'Laura M.', rating: 5, text: 'Perfeito para crianças! Monitores incríveis e praia linda.', time: 'há 5 dias' },
-      { author: 'Tiago A.', rating: 4.5, text: 'Restaurantes variados e piscina aquecida top. Voltarei!', time: 'há 1 mês' },
-      { author: 'Patrícia V.', rating: 5, text: 'Equipe de recreação sensacional, meus filhos amaram.', time: 'há 2 semanas' },
-      { author: 'Eduardo S.', rating: 4.5, text: 'Quartos amplos e bem arejados, ótimo ar-condicionado.', time: 'há 3 semanas' },
-      { author: 'Juliana P.', rating: 5, text: 'Programação diária de atividades, nunca ficamos entediados.', time: 'há 1 semana' },
-      { author: 'Miguel D.', rating: 4.5, text: 'Praia limpa e cadeiras confortáveis.', time: 'há 2 meses' },
-      { author: 'Renata C.', rating: 5, text: 'Café da manhã completo e staff atencioso.', time: 'há 1 mês' },
-      { author: 'Breno G.', rating: 4.5, text: 'Estacionamento fácil e seguro, voltarei com certeza.', time: 'há 3 semanas' }
-    ],
-  },
+  { id: 'h1', title: 'Deep River', img: 'https://images.unsplash.com/photo-1518684079-3c830dcef090?q=80&w=1200&auto=format&fit=crop', price: '$110 / night' },
+  { id: 'h2', title: 'Arabella', img: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?q=80&w=1200&auto=format&fit=crop', price: '$120 / night' },
+  { id: 'h3', title: 'Cyan Resort', img: 'https://images.unsplash.com/photo-1496412705862-e0088f16f791?q=80&w=1200&auto=format&fit=crop', price: '$140 / night' },
 ];
 
+// ✅ imagens estáveis
 const restaurants = [
-  {
-    id: 'r1',
-    title: 'Pasta Nostra',
-    img: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?q=80&w=1200&auto=format&fit=crop',
-    price: '$$',
-    gallery: [
-      'https://images.unsplash.com/photo-1526318472351-c75fcf070305?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1543353071-10c8ba85a904?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1600&auto=format&fit=crop'
-    ],
-    address: 'R. Itália, 45 - São Paulo, BR',
-    openingHours: '12:00–23:00 (seg–dom)',
-    specialty: 'Massas artesanais',
-    specialties: ['Carbonara', 'Cacio e Pepe', 'Ravioli de ricota e espinafre', 'Bruschetta al pomodoro', 'Tiramisu'],
-    cuisine: ['Italiana', 'Mediterrânea'],
-    pricePerPerson: 'R$ 80–120 / pessoa',
-    rating: 4.8,
-    reviewsCount: 5100,
-    description: 'Trattoria aconchegante com massas frescas feitas diariamente e carta de vinhos autoral.',
-    reviews: [
-      { author: 'João V.', rating: 5, text: 'Carbonara perfeito e atendimento 10/10.', time: 'há 1 semana' },
-      { author: 'Camila S.', rating: 4.5, text: 'Fila rápida e tiramisu divino!', time: 'há 3 semanas' },
-      { author: 'Pedro R.', rating: 5, text: 'Massa fresca de verdade, ponto impecável.', time: 'há 4 dias' },
-      { author: 'Lia N.', rating: 4.5, text: 'Ambiente aconchegante, ótimo para dates.', time: 'há 2 semanas' },
-      { author: 'Mário D.', rating: 4.5, text: 'Carta de vinhos surpreendente pelo preço.', time: 'há 1 mês' },
-      { author: 'Beatriz H.', rating: 5, text: 'Ravioli de ricota é obrigatório!', time: 'há 3 semanas' },
-      { author: 'Daniel C.', rating: 4.5, text: 'Serviço ágil e educado, recomendo.', time: 'há 2 meses' },
-      { author: 'Sofia L.', rating: 5, text: 'Cacio e pepe no ponto certo!', time: 'há 2 semanas' }
-    ],
-  },
-  {
-    id: 'r2',
-    title: 'Sushi & Co',
-    img: 'https://images.unsplash.com/photo-1542736667-069246bdbc74?q=80&w=1200&auto=format&fit=crop',
-    price: '$$$',
-    gallery: [
-      'https://images.unsplash.rcom/photo-1544025162-d76694265947?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1553621042-f6e147245754?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1600&auto=format&fit=crop'
-    ],
-    address: 'Av. Paulista, 1578 - São Paulo, BR',
-    openingHours: '12:00–22:30 (ter–dom)',
-    specialty: 'Omakase',
-    specialties: ['Omakase sazonal', 'Nigiri de toro', 'Seleção de sashimis', 'Tempurá leve', 'Mochi de sobremesa'],
-    cuisine: ['Japonesa', 'Fusão'],
-    pricePerPerson: 'R$ 140–220 / pessoa',
-    rating: 4.7,
-    reviewsCount: 4300,
-    description: 'Casa de sushi focada em ingredientes sazonais e experiência no balcão com menu omakase.',
-    reviews: [
-      { author: 'Renato L.', rating: 5, text: 'Peixe fresquíssimo, experiência impecável.', time: 'há 2 dias' },
-      { author: 'Yasmin P.', rating: 4.5, text: 'Vale o preço pelo omakase.', time: 'há 2 semanas' },
-      { author: 'Karina O.', rating: 5, text: 'Nigiri de toro inesquecível.', time: 'há 1 semana' },
-      { author: 'Marcelo G.', rating: 4.5, text: 'Balcão interativo, chef explica cada peça.', time: 'há 3 semanas' },
-      { author: 'Heitor F.', rating: 4.5, text: 'Arroz no ponto, peixe derrete na boca.', time: 'há 1 mês' },
-      { author: 'Luana T.', rating: 5, text: 'Ambiente intimista e elegante.', time: 'há 5 dias' },
-      { author: 'Bruno Y.', rating: 4.5, text: 'Tempurá leve, sem óleo excessivo.', time: 'há 2 meses' },
-      { author: 'Clara M.', rating: 5, text: 'Mochi finaliza a experiência com chave de ouro.', time: 'há 2 semanas' }
-    ],
-  },
-  {
-    id: 'r3',
-    title: 'Choripán House',
-    img: 'https://images.unsplash.com/photo-1550317138-10000687a72b?q=80&w=1200&auto=format&fit=crop',
-    price: '$',
-    gallery: [
-      'https://images.unsplash.com/photo-1533777324565-a040eb52fac1?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1526318472351-c75fcf070305?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1600&auto=format&fit=crop'
-    ],
-    address: 'Rua Florida, 200 - Buenos Aires, AR',
-    openingHours: '11:30–22:00 (seg–sáb)',
-    specialty: 'Sanduíches e parrilla',
-    specialties: ['Choripán clássico', 'Parrilla mista', 'Provoleta', 'Papas rústicas', 'Chopp gelado'],
-    cuisine: ['Argentina', 'Lanches'],
-    pricePerPerson: 'R$ 35–60 / pessoa',
-    rating: 4.6,
-    reviewsCount: 2100,
-    description: 'Sanduíches clássicos argentinos com chimichurri da casa e chopp gelado.',
-    reviews: [
-      { author: 'Nati G.', rating: 4.5, text: 'Choripán muito bem feito, preço justo.', time: 'há 4 dias' },
-      { author: 'Fernando T.', rating: 4, text: 'Ambiente simples e sabor autêntico.', time: 'há 1 mês' },
-      { author: 'Agustín R.', rating: 4.5, text: 'Provoleta perfeita, derretendo!', time: 'há 2 semanas' },
-      { author: 'Marina F.', rating: 4.5, text: 'Papas rústicas crocantes, adorei.', time: 'há 3 semanas' },
-      { author: 'Carlos E.', rating: 4, text: 'Chopp bem tirado e gelado.', time: 'há 2 semanas' },
-      { author: 'Santiago P.', rating: 4.5, text: 'Parrilla mista serve bem duas pessoas.', time: 'há 1 mês' },
-      { author: 'Luiza M.', rating: 4.5, text: 'Molho chimichurri é o diferencial.', time: 'há 5 dias' },
-      { author: 'Pablo J.', rating: 4, text: 'Atendimento rápido mesmo com casa cheia.', time: 'há 2 meses' }
-    ],
-  },
-  {
-    id: 'r4',
-    title: 'Prime Steak',
-    img: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=1200&auto=format&fit=crop',
-    price: '$$$',
-    gallery: [
-      'https://images.unsplash.com/photo-1555992336-03a23c4a3f0b?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1600&auto=format&fit=crop'
-    ],
-    address: 'R. da Praia, 120 - Rio de Janeiro, BR',
-    openingHours: '12:00–23:00 (seg–dom)',
-    specialty: 'Cortes premium na brasa',
-    specialties: ['Dry-aged ribeye', 'Picanha premium', 'Tomahawk', 'Purê trufado', 'Cheesecake de forno'],
-    cuisine: ['Churrascaria', 'Steakhouse'],
-    pricePerPerson: 'R$ 120–220 / pessoa',
-    rating: 4.8,
-    reviewsCount: 6900,
-    description: 'Steakhouse contemporânea com cortes dry-aged e adega climatizada.',
-    reviews: [
-      { author: 'Priscila A.', rating: 5, text: 'Ponto da carne perfeito e atendimento excelente.', time: 'há 1 semana' },
-      { author: 'Diego C.', rating: 4.5, text: 'Carta de vinhos muito boa. Ambiente sofisticado.', time: 'há 3 semanas' },
-      { author: 'Henrique B.', rating: 5, text: 'Tomahawk surreal, suculento.', time: 'há 5 dias' },
-      { author: 'Lara F.', rating: 4.5, text: 'Purê trufado maravilhoso.', time: 'há 2 semanas' },
-      { author: 'Eduarda V.', rating: 4.5, text: 'Sobremesas excelentes, destaque pro cheesecake.', time: 'há 1 mês' },
-      { author: 'Márcio Z.', rating: 4.5, text: 'Serviço atencioso e rápido.', time: 'há 3 semanas' },
-      { author: 'Tatiane Q.', rating: 5, text: 'Melhor picanha que já comi.', time: 'há 1 semana' },
-      { author: 'Vitor S.', rating: 4.5, text: 'Ambiente elegante, ideal pra celebrar.', time: 'há 2 meses' }
-    ],
-  },
-  {
-    id: 'r5',
-    title: 'La Pizzeria',
-    img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1200&auto=format&fit=crop',
-    price: '$$',
-    gallery: [
-      'https://images.unsplash.com/photo-1548365328-9f547fb09530?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1541744572-880c30e57a29?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1528731708534-816fe59f90c9?q=80&w=1600&auto=format&fit=crop'
-    ],
-    address: 'R. das Palmeiras, 300 - Recife, BR',
-    openingHours: '18:00–23:30 (qua–seg)',
-    specialty: 'Pizza napolitana',
-    specialties: ['Margherita D.O.P.', 'Diavola', 'Funghi', 'Bufalina', 'Panna cotta'],
-    cuisine: ['Italiana', 'Pizza'],
-    pricePerPerson: 'R$ 50–90 / pessoa',
-    rating: 4.7,
-    reviewsCount: 3800,
-    description: 'Pizzaria estilo napolitano com forno a lenha e ingredientes D.O.P.',
-    reviews: [
-      { author: 'Isabela R.', rating: 5, text: 'Massa leve e borda aerada perfeita.', time: 'há 2 semanas' },
-      { author: 'Cauê P.', rating: 4.5, text: 'Aperitivos ótimos e serviço ágil.', time: 'há 1 mês' },
-      { author: 'Rafael L.', rating: 5, text: 'Margherita D.O.P. é incrível.', time: 'há 6 dias' },
-      { author: 'Nathalia V.', rating: 4.5, text: 'Forno a lenha faz toda a diferença.', time: 'há 2 semanas' },
-      { author: 'João Pedro A.', rating: 4.5, text: 'Bufalina muito saborosa, ingredientes de qualidade.', time: 'há 3 semanas' },
-      { author: 'Gabriela M.', rating: 5, text: 'Sobremesa de panna cotta perfeita.', time: 'há 1 mês' },
-      { author: 'Thales R.', rating: 4.5, text: 'Ambiente charmoso e música boa.', time: 'há 2 meses' },
-      { author: 'Letícia S.', rating: 5, text: 'A melhor pizza napolitana da cidade.', time: 'há 1 semana' }
-    ],
-  },
+  { id: 'r1', title: 'Pasta Nostra', img: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?q=80&w=1200&auto=format&fit=crop', price: '$$' },
+  { id: 'r2', title: 'Sushi & Co', img: 'https://images.unsplash.com/photo-1542736667-069246bdbc74?q=80&w=1200&auto=format&fit=crop', price: '$$$' },
+  { id: 'r3', title: 'Choripán House', img: 'https://images.unsplash.com/photo-1550317138-10000687a72b?q=80&w=1200&auto=format&fit=crop', price: '$' },
+  { id: 'r4', title: 'Prime Steak', img: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=1200&auto=format&fit=crop', price: '$$$' },
+  { id: 'r5', title: 'La Pizzeria', img: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1200&auto=format&fit=crop', price: '$$' },
 ];
 
 const upcomingTrips = [
@@ -442,6 +207,7 @@ const quickActions: Action[] = [
   { key: 'logbook', label: 'Diário de bordo' },
 ];
 
+// 👉 ordem mantida; “Cotação” e “Assessoria” são os dois últimos
 const moreActions: Action[] = [
   { key: 'ai', label: 'Ajuda por IA' },
   { key: 'itinerary', label: 'Itinerário' },
@@ -450,7 +216,7 @@ const moreActions: Action[] = [
   { key: 'fotos', label: 'Fotos' },
   { key: 'expert', label: 'Falar com especialista' },
   { key: 'currency', label: 'Cotação de moedas' },
-  { key: 'advisory', label: 'Assessoria' },
+  { key: 'advisory', label: 'Assessoria' }, // ✅ do lado da “Cotação”
 ];
 
 const benefits: Benefit[] = [
@@ -460,7 +226,7 @@ const benefits: Benefit[] = [
   { key: 'stress', title: 'Redução do Estresse', text: 'Organize sua viagem com agenda e gastos claros para curtir sem preocupação.', icon: 'calendar-month-outline' },
 ];
 
-/* ============== Helpers: icons & chips ============== */
+// ---------------- Small UI bits ----------------
 function Chip({ active, children, onPress }: { active: boolean; children: React.ReactNode; onPress?: () => void }) {
   return (
     <TouchableOpacity onPress={onPress} style={[styles.chip, { borderColor: active ? BRAND : '#e5e7eb', backgroundColor: active ? BRAND : 'transparent' }]}>
@@ -473,10 +239,10 @@ function IconPill({ children }: { children: React.ReactNode }) {
   return <View style={[styles.iconPill, shadow(8)]}>{typeof children === 'string' ? <Text style={{ fontSize: 16 }}>{children}</Text> : children}</View>;
 }
 
-function SafeImage({ uri, alt, mode = 'cover' as 'cover' | 'contain' }: { uri: string; alt?: string; mode?: 'cover' | 'contain' }) {
+function SafeImage({ uri, alt }: { uri: string; alt?: string }) {
   const [ok, setOk] = useState<boolean>(true);
   return ok ? (
-    <Image source={{ uri }} onError={() => setOk(false)} resizeMode={mode} style={{ width: '100%', height: '100%' }} accessibilityLabel={alt || 'image'} />
+    <Image source={{ uri }} onError={() => setOk(false)} resizeMode="cover" style={{ width: '100%', height: '100%' }} accessibilityLabel={alt || 'image'} />
   ) : (
     <View style={{ flex: 1, backgroundColor: hexOpacity(BRAND, 0.25), alignItems: 'center', justifyContent: 'center' }}>
       <Text style={{ color: BRAND, fontWeight: '700' }}>{alt || 'EasyTrip'}</Text>
@@ -484,56 +250,51 @@ function SafeImage({ uri, alt, mode = 'cover' as 'cover' | 'contain' }: { uri: s
   );
 }
 
-/* ---------- Controlled Like / Flag Pills (sincronizados) ---------- */
-function LikePill({ active, onToggle }: { active?: boolean; onToggle?: (next: boolean) => void }) {
-  const isControlled = typeof active === 'boolean';
-  const [internal, setInternal] = useState(false);
-  const val = isControlled ? !!active : internal;
-
+// ❤️ Like (coração) com animação
+function LikePill() {
+  const [liked, setLiked] = useState(false);
   const scale = useRef(new Animated.Value(1)).current;
 
   const onPress = () => {
     Animated.sequence([
-      Animated.timing(scale, { toValue: 0.9, duration: 80, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      Animated.spring(scale, { toValue: 1, friction: 6, useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 0.85, duration: 90, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 1, friction: 4, useNativeDriver: true }),
     ]).start();
-    const next = !val;
-    onToggle?.(next);
-    if (!isControlled) setInternal(next);
+    setLiked((v) => !v);
   };
+
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
-      <Animated.View style={[styles.iconPill, shadow(6), { transform: [{ scale }] }]}>
-        {val ? <Ionicons name="heart" size={16} color="#ef4444" /> : <Ionicons name="heart-outline" size={16} color="#111" />}
+      <Animated.View style={[styles.iconPill, shadow(8), { transform: [{ scale }] }]}>
+        {liked ? <Ionicons name="heart" size={16} color="#ef4444" /> : <Ionicons name="heart-outline" size={16} color="#111" />}
       </Animated.View>
     </TouchableOpacity>
   );
 }
 
-function FlagPill({ active, onToggle }: { active?: boolean; onToggle?: (next: boolean) => void }) {
-  const isControlled = typeof active === 'boolean';
-  const [internal, setInternal] = useState(false);
-  const val = isControlled ? !!active : internal;
-
+// 🏳️ Bandeira/Bookmark com animação (preenche ao tocar)
+function FlagPill() {
+  const [flagged, setFlagged] = useState(false);
   const scale = useRef(new Animated.Value(1)).current;
+
   const onPress = () => {
     Animated.sequence([
-      Animated.timing(scale, { toValue: 0.9, duration: 80, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      Animated.spring(scale, { toValue: 1, friction: 6, useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 0.85, duration: 90, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 1, friction: 4, useNativeDriver: true }),
     ]).start();
-    const next = !val;
-    onToggle?.(next);
-    if (!isControlled) setInternal(next);
+    setFlagged((v) => !v);
   };
+
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
-      <Animated.View style={[styles.iconPill, shadow(6), { transform: [{ scale }] }]}>
-        {val ? <Ionicons name="bookmark" size={16} color={BRAND} /> : <Ionicons name="bookmark-outline" size={16} color="#111" />}
+      <Animated.View style={[styles.iconPill, shadow(8), { transform: [{ scale }] }]}>
+        {flagged ? <Ionicons name="bookmark" size={16} color={BRAND} /> : <Ionicons name="bookmark-outline" size={16} color="#111" />}
       </Animated.View>
     </TouchableOpacity>
   );
 }
 
+// ---------------- Icon helpers ----------------
 function actionIcon(key: ActionKey, color: string) {
   switch (key) {
     case 'social':
@@ -557,7 +318,7 @@ function actionIcon(key: ActionKey, color: string) {
     case 'currency':
       return <Ionicons name="cash-outline" size={18} color={color} />;
     case 'advisory':
-      return <Ionicons name="headset-outline" size={18} color={color} />;
+      return <Ionicons name="headset-outline" size={18} color={color} />; // ✅ Assessoria
     default:
       return <Ionicons name="ellipse-outline" size={18} color={color} />;
   }
@@ -573,7 +334,7 @@ function upcomingIcon(kind: 'calendar' | 'map' | 'airplane', color: string) {
   return <Ionicons name="calendar-outline" size={18} color={color} />;
 }
 
-/* ========================== SearchBar ========================== */
+// ---------------- SearchBar (com dropdown animado) ----------------
 function SearchBar() {
   const [value, setValue] = useState('');
   const [open, setOpen] = useState(false);
@@ -721,767 +482,18 @@ function SearchBar() {
   );
 }
 
-/* ====================== Bottom Sheet (Trips) ====================== */
-type Affordability = 'Barato' | 'Médio' | 'Caro';
-
-type TripMeta = {
-  desc: string;
-  more: string;
-  things: string[];
-  bestTime: string;
-  dangers: string;
-  currency: string;
-  afford: Affordability;
-  gallery: string[];
-};
-
-const metaByTrip: Record<string, TripMeta> = {
-  'Mount Aconcagua – Circuito completo': {
-    desc: 'Maior pico das Américas (6.962 m). Trekking em alta montanha com vistas glaciais e acampamentos.',
-    more: 'A região combina trilhas técnicas e rotas mais acessíveis ao Campo Base, oferecendo uma experiência de montanha completa para quem busca desafio e paisagens dramáticas.',
-    things: ['Trekking ao Campo Base', 'Mirantes glaciais', 'Parque Provincial Aconcágua'],
-    bestTime: 'Dezembro a fevereiro (verão andino).',
-    dangers: 'Altitude, clima imprevisível, necessidade de equipamento adequado e aclimatação.',
-    currency: 'Peso argentino (ARS).',
-    afford: 'Médio',
-    gallery: [
-      'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1521292270410-a8c8261e5a29?q=80&w=1600&auto=format&fit=crop',
-    ],
-  },
-  'Rio de Janeiro — Pão de Açúcar + Cristo Redentor': {
-    desc: 'Cartões-postais do Brasil com vistas panorâmicas da Baía de Guanabara e do litoral carioca.',
-    more: 'A dobradinha bondinho + corcovado entrega um panorama completo da cidade, combinando natureza, arquitetura e cultura em um raio curto de deslocamento.',
-    things: ['Bondinho do Pão de Açúcar', 'Cristo Redentor (Corcovado)', 'Praias de Copacabana e Ipanema'],
-    bestTime: 'Maio a outubro (menos chuva).',
-    dangers: 'Batedores de carteira em áreas turísticas; atenção a pertences.',
-    currency: 'Real (BRL).',
-    afford: 'Médio',
-    gallery: [
-      'https://images.unsplash.com/photo-1544989164-31dc3c645987?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1526401485004-2fda9f4e3b35?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1600&auto=format&fit=crop',
-    ],
-  },
-  'Cusco & Machu Picchu': {
-    desc: 'Coração do Império Inca e a cidadela mais famosa do Peru, cercada por Andes e selva.',
-    more: 'Entre ruínas e vilarejos artesanais, Cusco serve como base para experiências arqueológicas e gastronômicas que conectam passado e presente.',
-    things: ['Trilha Inca ou Trem a Aguas Calientes', 'Vale Sagrado', 'Sítios arqueológicos (Sacsayhuaman)'],
-    bestTime: 'Maio a setembro (estação seca).',
-    dangers: 'Soroche (mal da altitude) e forte incidência solar.',
-    currency: 'Sol (PEN).',
-    afford: 'Médio',
-    gallery: [
-      'https://images.unsplash.com/photo-1546530967-21531b891dd4?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1491555103944-7c647fd857e6?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1600&auto=format&fit=crop',
-    ],
-  },
-  'Torres del Paine': {
-    desc: 'Parque nacional patagônico com torres de granito, lagos azuis e trilhas icônicas (W e O).',
-    more: 'O cenário de ventos fortes e clima mutável é recompensado por mirantes épicos e refúgios acolhedores ao longo das rotas.',
-    things: ['Trilha W', 'Mirador Base Torres', 'Lago Grey (geleira)'],
-    bestTime: 'Novembro a março (verão na Patagônia).',
-    dangers: 'Ventos fortíssimos e clima muito variável.',
-    currency: 'Peso chileno (CLP).',
-    afford: 'Caro',
-    gallery: [
-      'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1600&auto=format&fit=crop',
-    ],
-  },
-  'Salar de Uyuni (Expedição 3 dias)': {
-    desc: 'O maior deserto de sal do mundo, que vira espelho d’água em época de chuvas.',
-    more: 'A experiência alterna trechos surreais de horizonte infinito com ilhas de cactos e hospedagens de sal, criando um roteiro único.',
-    things: ['Isla Incahuasi', 'Cemitério de Trens', 'Hotéis de sal'],
-    bestTime: 'Dez–mar (espelho), abr–nov (céu limpo e secura).',
-    dangers: 'Radiação UV, frio noturno intenso e deslocamentos longos.',
-    currency: 'Boliviano (BOB).',
-    afford: 'Barato',
-    gallery: [
-      'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1521292270410-a8c8261e5a29?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1453614512568-c4024d13c247?q=80&w=1600&auto=format&fit=crop',
-    ],
-  },
-  'Deserto do Atacama': {
-    desc: 'O deserto mais seco do mundo, com vales, geysers e céus estrelados.',
-    more: 'San Pedro funciona como hub para saídas diárias versáteis, de lagunas altiplânicas a observação astronômica de alto nível.',
-    things: ['Valle de la Luna', 'Geysers del Tatio', 'Lagunas Altiplânicas'],
-    bestTime: 'Abr–nov (clima ameno e céu limpo).',
-    dangers: 'Amplitude térmica grande; hidratação essencial.',
-    currency: 'Peso chileno (CLP).',
-    afford: 'Médio',
-    gallery: [
-      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1542736667-069246bdbc74?q=80&w=1600&auto=format&fit=crop',
-    ],
-  },
-  'Cartagena das Índias': {
-    desc: 'Cidade costeira colombiana com centro histórico colorido e praias próximas.',
-    more: 'O contraste entre muralhas coloniais, música caribenha e cozinha de frutos do mar cria uma atmosfera vibrante e fotogênica.',
-    things: ['Cidade Murada', 'Castelo de San Felipe', 'Praias das Ilhas do Rosário'],
-    bestTime: 'Dez–abr (menos chuvas).',
-    dangers: 'Calor úmido; atenção a preços em áreas turísticas.',
-    currency: 'Peso colombiano (COP).',
-    afford: 'Médio',
-    gallery: [
-      'https://images.unsplash.com/photo-1520975916090-3105956dac38?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=1600&auto=format&fit=crop',
-    ],
-  },
-  'Fernando de Noronha': {
-    desc: 'Arquipélago brasileiro com algumas das praias mais bonitas do mundo e vida marinha rica.',
-    more: 'O controle de visitantes preserva o ecossistema e garante trilhas, mergulhos e mirantes sempre especiais — com custos mais altos.',
-    things: ['Baía do Sancho', 'Mergulho e snorkeling', 'Trilha Atalaia'],
-    bestTime: 'Ago–out (mar calmo) ou jan–mar (ondas para surf).',
-    dangers: 'Taxas ambientais; sol forte; áreas com acesso controlado.',
-    currency: 'Real (BRL).',
-    afford: 'Caro',
-    gallery: [
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1496412705862-e0088f16f791?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1534854638093-bada1813ca19?q=80&w=1600&auto=format&fit=crop',
-    ],
-  },
-};
-
-/* ======== Sheet UI atoms ======== */
-function Overline({ children }: { children: React.ReactNode }) {
-  return <Text style={{ color: '#64748b', fontSize: 12, letterSpacing: 0.4, textTransform: 'uppercase' }}>{children}</Text>;
-}
-function Title({ children }: { children: React.ReactNode }) {
-  return <Text style={{ color: '#0f172a', fontSize: 20, fontWeight: '800' }}>{children}</Text>;
-}
-function Subtle({ children }: { children: React.ReactNode }) {
-  return <Text style={{ color: '#475569' }}>{children}</Text>;
-}
-function TagChip({ children }: { children: React.ReactNode }) {
-  return (
-    <View style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0' }}>
-      <Text style={{ color: '#0f172a', fontSize: 13 }}>{children}</Text>
-    </View>
-  );
-}
-function FactBadge({ icon, text }: { icon: React.ReactNode; text: string }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 12, backgroundColor: '#f8fafc', borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0' }}>
-      <View style={{ marginRight: 8 }}>{icon}</View>
-      <Text style={{ color: '#0f172a', fontWeight: '600' }}>{text}</Text>
-    </View>
-  );
-}
-function Callout({ icon, text }: { icon: React.ReactNode; text: string }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-start', padding: 12, borderRadius: 12, backgroundColor: '#fff7ed', borderWidth: 1, borderColor: '#fed7aa' }}>
-      <View style={{ marginRight: 10, marginTop: 2 }}>{icon}</View>
-      <Text style={{ color: '#9a3412', lineHeight: 20 }}>{text}</Text>
-    </View>
-  );
-}
-function StarRating({ rating, size = 14, color = BRAND }: { rating: number; size?: number, color?: string }) {
-  const full = Math.floor(rating);
-  const half = rating - full >= 0.5 ? 1 : 0;
-  const empty = 5 - full - half;
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      {Array.from({ length: full }).map((_, i) => <Ionicons key={`f${i}`} name="star" size={size} color={color} />)}
-      {half ? <Ionicons name="star-half" size={size} color={color} /> : null}
-      {Array.from({ length: empty }).map((_, i) => <Ionicons key={`e${i}`} name="star-outline" size={size} color={color} />)}
-    </View>
-  );
-}
-
-function formatReviews(n: number) {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace('.0', '')} mi`;
-  if (n >= 1000) return `${Math.round(n / 100) / 10} mil`;
-  return `${n}`;
-}
-
-/** Gallery full-width (edge-to-edge) com snap - BottomSheet Trips */
-function SheetGallery({ uris }: { uris: string[] }) {
-  const ITEM_W = SCREEN_W; // full width
-  const ITEM_H = Math.min(Math.round(SCREEN_W * 9 / 16), Math.round(SCREEN_H * 0.42));
-  const [index, setIndex] = useState(0);
-
-  return (
-    <View style={{ width: SCREEN_W, marginLeft: 0 }}>
-      <FlatList
-        horizontal
-        data={uris}
-        keyExtractor={(u, i) => `${u}-${i}`}
-        showsHorizontalScrollIndicator={false}
-        decelerationRate="fast"
-        snapToInterval={ITEM_W}
-        snapToAlignment="start"
-        getItemLayout={(_, i) => ({ length: ITEM_W, offset: ITEM_W * i, index: i })}
-        onScroll={(e) => {
-          const x = e.nativeEvent.contentOffset.x;
-          const i = Math.round(x / ITEM_W);
-          if (i !== index) setIndex(i);
-        }}
-        renderItem={({ item }) => (
-          <View style={{ width: ITEM_W, height: ITEM_H, backgroundColor: '#0b0b0b' }}>
-            <SafeImage uri={item} alt="gallery" mode="cover" />
-          </View>
-        )}
-      />
-      {/* Dots */}
-      <View style={{ flexDirection: 'row', justifyContent: 'center', paddingVertical: 10 }}>
-        {uris.map((_, i) => (
-          <View
-            key={i}
-            style={{
-              height: 4,
-              width: i === index ? 18 : 6,
-              borderRadius: 999,
-              marginHorizontal: 3,
-              backgroundColor: i === index ? '#9ca3af' : '#e5e7eb',
-            }}
-          />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-/* ====================== Modal para Hotéis/Restaurantes ====================== */
-function PlaceGallery({ uris }: { uris: string[] }) {
-  const ITEM_W = SCREEN_W;
-  const ITEM_H = Math.min(Math.round(SCREEN_W * 9 / 16), Math.round(SCREEN_H * 0.42));
-  const [index, setIndex] = useState(0);
-  return (
-    <View style={{ width: SCREEN_W }}>
-      <FlatList
-        horizontal
-        data={uris}
-        keyExtractor={(u, i) => `${u}-${i}`}
-        showsHorizontalScrollIndicator={false}
-        decelerationRate="fast"
-        snapToInterval={ITEM_W}
-        snapToAlignment="start"
-        getItemLayout={(_, i) => ({ length: ITEM_W, offset: ITEM_W * i, index: i })}
-        onScroll={(e) => {
-          const x = e.nativeEvent.contentOffset.x;
-          const i = Math.round(x / ITEM_W);
-          if (i !== index) setIndex(i);
-        }}
-        renderItem={({ item }) => (
-          <View style={{ width: ITEM_W, height: ITEM_H, backgroundColor: '#0b0b0b' }}>
-            <SafeImage uri={item} alt="gallery" mode="cover" />
-          </View>
-        )}
-      />
-      <View style={{ flexDirection: 'row', justifyContent: 'center', paddingVertical: 10 }}>
-        {uris.map((_, i) => (
-          <View
-            key={i}
-            style={{
-              height: 4,
-              width: i === index ? 18 : 6,
-              borderRadius: 999,
-              marginHorizontal: 3,
-              backgroundColor: i === index ? '#9ca3af' : '#e5e7eb',
-            }}
-          />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-type Place = any;
-
-function ReviewItem({ author, rating, text, time }: { author: string; rating: number; text: string; time: string }) {
-  const initial = author.trim().charAt(0).toUpperCase();
-  return (
-    <View style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <View style={{ height: 28, width: 28, borderRadius: 14, backgroundColor: '#e2e8f0', alignItems: 'center', justifyContent: 'center', marginRight: 8 }}>
-          <Text style={{ color: '#334155', fontWeight: '800' }}>{initial}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: '#0f172a', fontWeight: '700' }}>{author}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <StarRating rating={rating} size={12} />
-            <Text style={{ marginLeft: 6, color: '#64748b', fontSize: 12 }}>{time}</Text>
-          </View>
-        </View>
-      </View>
-      <Text style={{ color: '#334155', marginTop: 6, lineHeight: 20 }}>{text}</Text>
-    </View>
-  );
-}
-
-function PlaceModal({
-  visible,
-  place,
-  onClose,
-}: {
-  visible: boolean;
-  place: Place | null;
-  onClose: () => void;
-}) {
-  const SHEET_H = Math.round(SCREEN_H * 0.9);
-  const translateY = useRef(new Animated.Value(SHEET_H)).current;
-  const backdrop = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.timing(translateY, { toValue: 0, duration: 230, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(backdrop, { toValue: 1, duration: 160, useNativeDriver: true }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(translateY, { toValue: SHEET_H, duration: 200, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(backdrop, { toValue: 0, duration: 150, useNativeDriver: true }),
-      ]).start();
-    }
-  }, [visible]);
-
-  const pan = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_e, g) => g.dy > 6 && Math.abs(g.dy) > Math.abs(g.dx),
-      onPanResponderMove: (_e, g) => {
-        const ny = Math.max(0, Math.min(g.dy, SHEET_H));
-        translateY.setValue(ny);
-      },
-      onPanResponderRelease: (_e, g) => {
-        const shouldClose = g.vy > 1.1 || g.dy > SHEET_H * 0.22;
-        if (shouldClose) {
-          Animated.parallel([
-            Animated.timing(translateY, { toValue: SHEET_H, duration: 180, useNativeDriver: true }),
-            Animated.timing(backdrop, { toValue: 0, duration: 160, useNativeDriver: true }),
-          ]).start(onClose);
-        } else {
-          Animated.spring(translateY, { toValue: 0, bounciness: 4, useNativeDriver: true }).start();
-        }
-      },
-    })
-  ).current;
-
-  if (!place) return null;
-
-  const isHotel = (!!place.price && /night|noite/i.test(place.price)) || !!place.priceLabel;
-  const gallery = place.gallery?.length ? place.gallery : [place.img];
-  const mapsUrl = place.lat && place.lng
-    ? `https://www.google.com/maps/?q=${place.lat},${place.lng}`
-    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place.title} ${place.address || ''}`.trim())}`;
-  const googleReviewsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.title + ' ' + (place.address || ''))}`;
-
-  const openMaps = () => {
-    try { Linking.openURL(mapsUrl); } catch { }
-  };
-  const openSite = () => {
-    if (place.website) {
-      try { Linking.openURL(place.website); } catch { }
-    }
-  };
-  const callPhone = () => {
-    if (place.phone) {
-      try { Linking.openURL(`tel:${place.phone}`); } catch { }
-    }
-  };
-  const openReviews = () => {
-    try { Linking.openURL(googleReviewsUrl); } catch { }
-  };
-
-  return (
-    <>
-      <Animated.View
-        pointerEvents={visible ? 'auto' : 'none'}
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          top: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15,23,42,0.28)',
-          opacity: backdrop,
-        }}
-      >
-        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
-      </Animated.View>
-
-      <Animated.View
-        style={[
-          {
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: SHEET_H,
-            backgroundColor: '#fff',
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
-            transform: [{ translateY }],
-            overflow: 'hidden',
-          },
-          shadow(8),
-        ]}
-      >
-        {/* Close */}
-        <TouchableOpacity
-          onPress={onClose}
-          activeOpacity={0.9}
-          style={{
-            position: 'absolute',
-            right: 10,
-            top: 6,
-            height: 36,
-            width: 36,
-            borderRadius: 18,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'transparent',
-            zIndex: 40,
-          }}
-        >
-          <Ionicons name="close" size={18} color="#0f172a" />
-        </TouchableOpacity>
-
-        {/* Handle */}
-        <View {...pan.panHandlers} style={{ paddingTop: 18, alignItems: 'center' }}>
-          <View style={{ height: 4, width: 44, borderRadius: 999, backgroundColor: '#e5e7eb' }} />
-        </View>
-
-        {/* Header */}
-        <View style={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10 }}>
-          <Overline>{isHotel ? 'Hotel' : 'Restaurante'}</Overline>
-          <Title>{place.title}</Title>
-          {place.address ? <Text style={{ color: '#64748b', marginTop: 4 }}>{place.address}</Text> : null}
-
-          {(place.rating || place.reviewsCount) ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-              {place.rating ? <StarRating rating={place.rating} /> : null}
-              <Text style={{ marginLeft: 8, color: '#111827', fontWeight: '700' }}>{place.rating?.toFixed(1)}</Text>
-              <Text style={{ marginLeft: 6, color: '#64748b' }}>• {formatReviews(place.reviewsCount || 0)} avaliações</Text>
-            </View>
-          ) : null}
-        </View>
-
-        {/* Content */}
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
-          <PlaceGallery uris={gallery} />
-
-          {/* Quick facts */}
-          <View style={{ paddingHorizontal: 16 }}>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {isHotel && place.priceLabel ? (
-                <FactBadge icon={<Ionicons name="bed-outline" size={16} color="#0f172a" />} text={place.priceLabel} />
-              ) : null}
-              {!isHotel && place.pricePerPerson ? (
-                <FactBadge icon={<Ionicons name="pricetag-outline" size={16} color="#0f172a" />} text={place.pricePerPerson} />
-              ) : null}
-              {place.openingHours ? (
-                <FactBadge icon={<Ionicons name="time-outline" size={16} color="#0f172a" />} text={place.openingHours} />
-              ) : null}
-              {place.specialty ? (
-                <FactBadge icon={<Ionicons name="restaurant-outline" size={16} color="#0f172a" />} text={place.specialty} />
-              ) : null}
-            </View>
-          </View>
-
-          {/* Sobre o lugar */}
-          {place.description ? (
-            <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
-              <Subtle>Sobre o lugar</Subtle>
-              <Text style={{ color: '#0f172a', marginTop: 6, lineHeight: 22 }}>{place.description}</Text>
-            </View>
-          ) : null}
-
-          {/* Cuisine / Features */}
-          {(!isHotel && place.cuisine?.length) ? (
-            <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
-              <Subtle>Tipo de comida</Subtle>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
-                {place.cuisine.map((c: string, i: number) => <TagChip key={i}>{c}</TagChip>)}
-              </View>
-            </View>
-          ) : null}
-
-          {(isHotel && place.features?.length) ? (
-            <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
-              <Subtle>Amenidades</Subtle>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
-                {place.features.map((f: string, i: number) => <TagChip key={i}>{f}</TagChip>)}
-              </View>
-            </View>
-          ) : null}
-
-          {/* Avaliações */}
-          {place.reviews?.length ? (
-            <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Subtle>Avaliações</Subtle>
-                <TouchableOpacity onPress={openReviews}>
-                  <Text style={{ color: BRAND, fontWeight: '700' }}>Ver mais no Google</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={{ marginTop: 6 }}>
-                {place.reviews.slice(0, 3).map((r: any, idx: number) => (
-                  <ReviewItem key={idx} author={r.author} rating={r.rating} text={r.text} time={r.time} />
-                ))}
-              </View>
-            </View>
-          ) : null}
-
-          {/* Actions */}
-          <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TouchableOpacity onPress={openMaps} activeOpacity={0.9} style={[styles.btnSolid, { flex: 1, borderRadius: 14, paddingVertical: 12 }]}>
-                <Text style={{ color: '#fff', fontWeight: '800' }}>Abrir no Maps</Text>
-              </TouchableOpacity>
-              {place.phone ? (
-                <TouchableOpacity onPress={callPhone} activeOpacity={0.9} style={[styles.btnOutline, { flex: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderColor: '#e5e7eb' }]}>
-                  <Text style={{ color: '#0f172a', fontWeight: '800' }}>Ligar</Text>
-                </TouchableOpacity>
-              ) : null}
-              {place.website ? (
-                <TouchableOpacity onPress={openSite} activeOpacity={0.9} style={[styles.btnOutline, { flex: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderColor: BRAND }]}>
-                  <Text style={{ color: BRAND, fontWeight: '800' }}>Ver site</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          </View>
-        </ScrollView>
-      </Animated.View>
-    </>
-  );
-}
-
-/* ====================== Bottom Sheet (FOCUS ON CAROUSEL + CTA) ====================== */
-function BottomSheet({
-  visible,
-  trip,
-  onClose,
-  liked,
-  flagged,
-  onToggleLike,
-  onToggleFlag,
-}: {
-  visible: boolean;
-  trip: Trip | null;
-  onClose: () => void;
-  liked: boolean;
-  flagged: boolean;
-  onToggleLike: () => void;
-  onToggleFlag: () => void;
-}) {
-  const SHEET_H = Math.round(SCREEN_H * 0.92);
-  const SAFE_PAD_B = Platform.OS === 'ios' ? 22 : 16; // margem segura inferior
-
-  const translateY = useRef(new Animated.Value(SHEET_H)).current;
-  const backdrop = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.timing(translateY, { toValue: 0, duration: 230, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(backdrop, { toValue: 1, duration: 160, useNativeDriver: true }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(translateY, { toValue: SHEET_H, duration: 200, easing: Easing.in(Easing.cubic), useNativeDriver: true }),
-        Animated.timing(backdrop, { toValue: 0, duration: 150, useNativeDriver: true }),
-      ]).start();
-    }
-  }, [visible]);
-
-  // Drag para fechar
-  const pan = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_e, g) => g.dy > 6 && Math.abs(g.dy) > Math.abs(g.dx),
-      onPanResponderMove: (_e, g) => {
-        const ny = Math.max(0, Math.min(g.dy, SHEET_H));
-        translateY.setValue(ny);
-      },
-      onPanResponderRelease: (_e, g) => {
-        const shouldClose = g.vy > 1.1 || g.dy > SHEET_H * 0.22;
-        if (shouldClose) {
-          Animated.parallel([
-            Animated.timing(translateY, { toValue: SHEET_H, duration: 180, useNativeDriver: true }),
-            Animated.timing(backdrop, { toValue: 0, duration: 160, useNativeDriver: true }),
-          ]).start(onClose);
-        } else {
-          Animated.spring(translateY, { toValue: 0, bounciness: 4, useNativeDriver: true }).start();
-        }
-      },
-    })
-  ).current;
-
-  if (!trip) return null;
-  const meta = metaByTrip[trip.title];
-
-  const CTA = () => (
-    <TouchableOpacity
-      onPress={() => Alert.alert('Guia', `Abrindo detalhes para: ${trip.title}`)}
-      activeOpacity={0.9}
-      style={{
-        height: 52,
-        borderRadius: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: BRAND,
-      }}
-    >
-      <Text style={{ color: '#fff', fontWeight: '800' }}>Ir para esse lugar</Text>
-    </TouchableOpacity>
-  );
-
-  return (
-    <>
-      {/* Backdrop */}
-      <Animated.View
-        pointerEvents={visible ? 'auto' : 'none'}
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          top: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15,23,42,0.28)',
-          opacity: backdrop,
-        }}
-      >
-        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
-      </Animated.View>
-
-      {/* Sheet */}
-      <Animated.View
-        style={[
-          {
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: SHEET_H,
-            backgroundColor: '#fff',
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
-            transform: [{ translateY }],
-            overflow: 'hidden',
-          },
-          shadow(8),
-        ]}
-      >
-        {/* Floating Close Button (icon-only) */}
-        <TouchableOpacity
-          onPress={onClose}
-          activeOpacity={0.9}
-          style={{
-            position: 'absolute',
-            right: 10,
-            top: 6,
-            height: 36,
-            width: 36,
-            borderRadius: 18,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'transparent',
-            zIndex: 40,
-          }}
-        >
-          <Ionicons name="close" size={18} color="#0f172a" />
-        </TouchableOpacity>
-
-        {/* Header */}
-        <View {...pan.panHandlers} style={{ paddingTop: 18, alignItems: 'center' }}>
-          <View style={{ height: 4, width: 44, borderRadius: 999, backgroundColor: '#e5e7eb' }} />
-        </View>
-        <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 10 }}>
-          <Overline>{trip.subtitle} • {trip.city}</Overline>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: 6 }}>
-            <View style={{ flex: 1, paddingRight: 8 }}>
-              <Title>{trip.title}</Title>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              {/* Bandeira + Gostei controlados */}
-              <View style={{ marginRight: 6 }}>
-                <FlagPill active={flagged} onToggle={onToggleFlag} />
-              </View>
-              <View>
-                <LikePill active={liked} onToggle={onToggleLike} />
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Conteúdo */}
-        <KeyboardAvoidingView behavior={Platform.select({ ios: 'padding', android: undefined })} keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0} style={{ flex: 1 }}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: SAFE_PAD_B + 100 }}>
-            {/* Gallery full width */}
-            <SheetGallery uris={meta.gallery} />
-
-            {/* Facts */}
-            <View style={{ paddingHorizontal: 16 }}>
-              <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-                <FactBadge icon={<Ionicons name="wallet-outline" size={16} color="#0f172a" />} text={`Custo: ${meta.afford}`} />
-                <FactBadge icon={<Ionicons name="cash-outline" size={16} color="#0f172a" />} text={meta.currency} />
-                <FactBadge icon={<Ionicons name="sunny-outline" size={16} color="#0f172a" />} text={meta.bestTime} />
-              </View>
-            </View>
-
-            {/* Descrição expandida */}
-            <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
-              <Subtle>O que é o local</Subtle>
-              <Text style={{ color: '#0f172a', lineHeight: 22, fontSize: 14, marginTop: 6 }}>{meta.desc}</Text>
-              <Text style={{ color: '#334155', lineHeight: 22, fontSize: 14, marginTop: 8 }}>{meta.more}</Text>
-            </View>
-
-            {/* Coisas para fazer - chips */}
-            <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
-              <Subtle>Coisas para fazer</Subtle>
-              <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 6 }}>
-                {meta.things.map((t, idx) => (
-                  <TagChip key={idx}>{t}</TagChip>
-                ))}
-              </View>
-            </View>
-
-            {/* Perigos / Atenções */}
-            <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
-              <Subtle>Perigos / Atenções</Subtle>
-              <View style={{ marginTop: 8 }}>
-                <Callout icon={<Ionicons name="warning-outline" size={18} color="#c2410c" />} text={meta.dangers} />
-              </View>
-            </View>
-          </ScrollView>
-
-          {/* CTA fixo */}
-          <View style={{ padding: 16, paddingBottom: SAFE_PAD_B + 8, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#e2e8f0' }}>
-            <CTA />
-          </View>
-        </KeyboardAvoidingView>
-      </Animated.View>
-    </>
-  );
-}
-
-/* ============================== Cards ============================== */
+// ---------------- Cards ----------------
+// Overlap/Stack cards no estilo do mock (inclinação + glass panel)
 function OverlapCard({
   trip,
   index,
   activeIndex,
-  onPressCard,
-  liked,
-  flagged,
-  onToggleLike,
-  onToggleFlag,
+  onSelect,
 }: {
   trip: Trip;
   index: number;
   activeIndex: number;
-  onPressCard: (index: number) => void;
-  liked: boolean;
-  flagged: boolean;
-  onToggleLike: () => void;
-  onToggleFlag: () => void;
+  onSelect: (index: number) => void;
 }) {
   const offset = index - activeIndex;
   if (Math.abs(offset) > VISIBLE_RANGE) return null;
@@ -1502,27 +514,31 @@ function OverlapCard({
     width: '100%',
   };
 
-  const dimAlpha = depth === 0 ? 0.2 : 0.32;
-  const sideTint = offset === 0 ? 'transparent' : offset < 0 ? 'rgba(80,140,255,0.14)' : 'rgba(255,120,120,0.14)';
+  const dimAlpha = depth === 0 ? 0.22 : 0.38;
+  const sideTint = offset === 0 ? 'transparent' : offset < 0 ? 'rgba(80,140,255,0.18)' : 'rgba(255,120,120,0.18)';
 
   return (
     <BlockableView blocked={depth > 1} style={baseStyle}>
-      <TouchableOpacity activeOpacity={0.9} onPress={() => onPressCard(index)}>
-        <CardShell radius={26} elevation={14}>
+      <TouchableOpacity activeOpacity={0.9} onPress={() => onSelect(index)}>
+        <CardShell radius={26} elevation={16}>
           <View style={{ position: 'relative', height: 288, width: '100%', backgroundColor: '#000' }}>
             <SafeImage uri={trip.img} alt={trip.title} />
             <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: `rgba(0,0,0,${dimAlpha})` }} />
             {depth > 0 && <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: sideTint }} />}
 
+            {/* top pills */}
             <View style={{ position: 'absolute', top: 16, left: 16, right: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ opacity: 0.9 }}>
-                <FlagPill active={flagged} onToggle={onToggleFlag} />
+                {/* 🏳️ Flag animada */}
+                <FlagPill />
               </View>
               <View style={{ opacity: 0.9 }}>
-                <LikePill active={liked} onToggle={onToggleLike} />
+                {/* ❤️ Like animado */}
+                <LikePill />
               </View>
             </View>
 
+            {/* glass panel no rodapé */}
             <View style={styles.glassBox}>
               <View style={{ flex: 1, paddingRight: 12 }}>
                 <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }} numberOfLines={1}>
@@ -1532,9 +548,9 @@ function OverlapCard({
                   {trip.subtitle} • {trip.city}
                 </Text>
               </View>
-              <View style={styles.glassBtn}>
+              <TouchableOpacity onPress={() => Alert.alert(`Abrir detalhes de ${trip.title}`)} style={styles.glassBtn}>
                 <Ionicons name="time-outline" size={18} color="#fff" />
-              </View>
+              </TouchableOpacity>
             </View>
           </View>
         </CardShell>
@@ -1543,39 +559,37 @@ function OverlapCard({
   );
 }
 
-const MiniTile = React.memo(function MiniTile({ title, img, price, onPress }: { title: string; img: string; price?: string; onPress?: () => void }) {
+const MiniTile = React.memo(function MiniTile({ title, img, price }: { title: string; img: string; price?: string }) {
   return (
-    <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
-      <CardShell radius={16} elevation={10} style={{ width: 220 }}>
-        <View>
-          <View style={{ height: 120, width: '100%' }}>
-            <SafeImage uri={img} alt={title} />
-          </View>
-          <View style={{ padding: 12 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View
-                style={{
-                  height: 20,
-                  width: 20,
-                  borderRadius: 10,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: hexOpacity(BRAND, 0.12),
-                  marginRight: 8,
-                }}
-              >
-                <Ionicons name="star" size={12} color={BRAND} />
-              </View>
-              <Text style={{ color: '#374151', fontSize: 14 }}>5.0</Text>
-            </View>
-            <Text style={{ marginTop: 4, color: '#111827', fontWeight: '600' }} numberOfLines={1} ellipsizeMode="tail">
-              {title}
-            </Text>
-            {!!price && <Text style={{ color: '#6b7280', fontSize: 12 }}>From {price}</Text>}
-          </View>
+    <CardShell radius={16} elevation={10} style={{ width: 220 }}>
+      <View>
+        <View style={{ height: 120, width: '100%' }}>
+          <SafeImage uri={img} alt={title} />
         </View>
-      </CardShell>
-    </TouchableOpacity>
+        <View style={{ padding: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View
+              style={{
+                height: 20,
+                width: 20,
+                borderRadius: 10,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: hexOpacity(BRAND, 0.12),
+                marginRight: 8,
+              }}
+            >
+              <Ionicons name="star" size={12} color={BRAND} />
+            </View>
+            <Text style={{ color: '#374151', fontSize: 14 }}>5.0</Text>
+          </View>
+          <Text style={{ marginTop: 4, color: '#111827', fontWeight: '600' }} numberOfLines={1} ellipsizeMode="tail">
+            {title}
+          </Text>
+          {!!price && <Text style={{ color: '#6b7280', fontSize: 12 }}>From {price}</Text>}
+        </View>
+      </View>
+    </CardShell>
   );
 });
 
@@ -1698,31 +712,15 @@ function AboutSection() {
   );
 }
 
-/* ============================== Page ============================== */
+// ---------------- Page ----------------
 export default function Index() {
   const [active, setActive] = useState<number>(0);
   const [bottomTab, setBottomTab] = useState<BottomTab>('home');
   const [placesTab, setPlacesTab] = useState<PlacesTab>('hotels');
 
-  // Bottom Sheet state
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
-
-  // Place Modal state
-  const [placeOpen, setPlaceOpen] = useState(false);
-  const [selectedPlace, setSelectedPlace] = useState<any | null>(null);
-
-  // SYNC state: liked / flagged por título
-  const [likedBy, setLikedBy] = useState<Record<string, boolean>>({});
-  const [flaggedBy, setFlaggedBy] = useState<Record<string, boolean>>({});
-
-  const toggleLikeByTitle = (title: string) =>
-    setLikedBy((prev) => ({ ...prev, [title]: !prev[title] }));
-  const toggleFlagByTitle = (title: string) =>
-    setFlaggedBy((prev) => ({ ...prev, [title]: !prev[title] }));
-
   const deckHeight = Math.min(300, Math.round(SCREEN_H * 0.44));
 
+  // ✅ Swipe: PanResponder para trocar os cards do deck
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_evt, gestureState) => {
@@ -1752,7 +750,7 @@ export default function Index() {
       fotos: 'Abrir câmera / galeria',
       expert: 'Falar com especialista via WhatsApp',
       currency: 'Ver cotação de moedas',
-      advisory: 'Abrir assessoria',
+      advisory: 'Abrir assessoria', // ✅ novo
     };
     Alert.alert(labels[key] || (key as string));
   };
@@ -1773,42 +771,26 @@ export default function Index() {
 
   const placeData = placesTab === 'hotels' ? hotels : restaurants;
 
+  // 🔢 largura de cada card para garantir 3 por linha
   const ACTION_W = (containerW - 20 * 2 - 12 * 2) / 3;
 
+  // 🧩 ações + spacer invisível NO FIM se sobrar 2 na última linha (para ficarem nas colunas 1 e 2)
   const baseActions = [...quickActions, ...moreActions] as Array<Action | { key: '__spacer__'; label?: '' }>;
   if (baseActions.length % 3 === 2) {
-    baseActions.push({ key: '__spacer__' } as any);
+    // 👉 spacer no FINAL (coluna 3 vazia)
+    baseActions.push({ key: '__spacer__' });
   }
-
-  // open bottom sheet from carousel
-  const openSheetFor = (idx: number) => {
-    setActive(idx);
-    const t = trips[idx];
-    setSelectedTrip(t);
-    setSheetOpen(true);
-  };
-
-  const closeSheet = () => {
-    setSheetOpen(false);
-  };
-
-  // open place modal
-  const openPlace = (place: any) => { setSelectedPlace(place); setPlaceOpen(true); };
-  const closePlace = () => setPlaceOpen(false);
 
   return (
     <View style={{ flex: 1, backgroundColor: '#f3f4f6' }}>
       <View style={[containerOuterStyle]}>
         <View style={{ height: Platform.OS === 'web' ? 20 : 0 }} />
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 160 }}
-          keyboardShouldPersistTaps="handled"
-        >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 160 }} keyboardShouldPersistTaps="handled">
           {/* Header */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* Logo ✦ mantém original */}
               <View style={{ height: 32, width: 32, borderRadius: 16, backgroundColor: BRAND, alignItems: 'center', justifyContent: 'center', marginRight: 8 }}>
                 <Text style={{ color: '#fff', fontWeight: '800' }}>✦</Text>
               </View>
@@ -1837,29 +819,19 @@ export default function Index() {
             </Text>
           </View>
 
-          {/* Deck / carousel */}
+          {/* Deck / carousel (look da imagem) - agora com swipe */}
           <View style={{ marginTop: 24, height: deckHeight + 24 }} {...panResponder.panHandlers}>
             <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 16 }}>
               {trips.map((t, i) => (
-                <OverlapCard
-                  key={t.title}
-                  trip={t}
-                  index={i}
-                  activeIndex={active}
-                  onPressCard={openSheetFor}
-                  liked={!!likedBy[t.title]}
-                  flagged={!!flaggedBy[t.title]}
-                  onToggleLike={() => toggleLikeByTitle(t.title)}
-                  onToggleFlag={() => toggleFlagByTitle(t.title)}
-                />
+                <OverlapCard key={t.title} trip={t} index={i} activeIndex={active} onSelect={setActive} />
               ))}
             </View>
             <View style={{ position: 'absolute', left: -8, top: deckHeight / 2 - 18, flexDirection: 'row' }}>
-              <TouchableOpacity onPress={() => openSheetFor((active - 1 + trips.length) % trips.length)} style={[styles.navCircle]}>
+              <TouchableOpacity onPress={goPrev} style={[styles.navCircle]}>
                 <Ionicons name="chevron-back" size={18} color="#111" />
               </TouchableOpacity>
               <View style={{ width: 8 }} />
-              <TouchableOpacity onPress={() => openSheetFor((active + 1) % trips.length)} style={[styles.navCircle]}>
+              <TouchableOpacity onPress={goNext} style={[styles.navCircle]}>
                 <Ionicons name="chevron-forward" size={18} color="#111" />
               </TouchableOpacity>
             </View>
@@ -1885,13 +857,13 @@ export default function Index() {
             >
               {placeData.map((h) => (
                 <View key={(h as any).id} style={{ marginRight: 12 }}>
-                  <MiniTile title={(h as any).title} img={(h as any).img} price={'price' in h ? (h as any).price : undefined} onPress={() => openPlace(h)} />
+                  <MiniTile title={(h as any).title} img={(h as any).img} price={'price' in h ? (h as any).price : undefined} />
                 </View>
               ))}
             </ScrollView>
           </View>
 
-          {/* Próximos */}
+          {/* Próximos - carousel */}
           <View style={{ marginTop: 24 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <Text style={{ fontWeight: '700', fontSize: 18 }}>Próximos</Text>
@@ -1934,17 +906,18 @@ export default function Index() {
             </View>
           </CardShell>
 
-          {/* Atalhos */}
+          {/* 🔁 No lugar do "Nearby / Recommend / Share" */}
           <View style={{ marginTop: 24, marginBottom: 8 }}>
             <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827' }}>Seus atalhos</Text>
             <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>Acelere seu planejamento com ferramentas úteis</Text>
           </View>
 
-          {/* Quick + More actions */}
+          {/* Quick + More actions — 3 por linha; última linha com spacer no fim (coluna 3) */}
           <View style={{ marginTop: 8 }}>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
               {baseActions.map((a, idx) => {
                 if ((a as any).key === '__spacer__') {
+                  // coluna 3 vazia
                   return <View key={`spacer-${idx}`} style={{ width: ACTION_W, marginBottom: 12 }} />;
                 }
                 const act = a as Action;
@@ -1966,7 +939,7 @@ export default function Index() {
             </View>
           </View>
 
-          {/* Benefícios */}
+          {/* 📦 Benefícios movidos para baixo dos ícones */}
           <AboutSection />
         </ScrollView>
 
@@ -1990,25 +963,11 @@ export default function Index() {
           </View>
         </View>
       </View>
-
-      {/* Place Modal */}
-      <PlaceModal visible={placeOpen} place={selectedPlace} onClose={closePlace} />
-
-      {/* Bottom Sheet overlay */}
-      <BottomSheet
-        visible={sheetOpen}
-        trip={selectedTrip}
-        onClose={closeSheet}
-        liked={!!(selectedTrip && likedBy[selectedTrip.title])}
-        flagged={!!(selectedTrip && flaggedBy[selectedTrip.title])}
-        onToggleLike={() => selectedTrip && toggleLikeByTitle(selectedTrip.title)}
-        onToggleFlag={() => selectedTrip && toggleFlagByTitle(selectedTrip.title)}
-      />
     </View>
   );
 }
 
-/* ============================== Styles ============================== */
+// ---------------- Styles ----------------
 const styles = StyleSheet.create({
   chip: {
     paddingVertical: 8,
@@ -2031,6 +990,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.9)',
+  },
+  btnGo: {
+    height: 40,
+    width: 40,
+    borderRadius: 20,
+    backgroundColor: BRAND,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   navCircle: {
     height: 36,
@@ -2071,7 +1038,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 12,
   },
-  // SearchBar
+  // --- SearchBar styles ---
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2132,7 +1099,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     overflow: 'hidden',
   },
-
+  // glass panel do card principal
   glassBox: {
     position: 'absolute',
     left: 12,
