@@ -13,19 +13,55 @@ import {
   Platform,
   TextInput,
   Image,
+  ImageErrorEventData,
+  NativeSyntheticEvent,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-/**
- * EasyTrip — Home (index.tsx)
- * - Novas sessões: Próximos, Da comunidade, Promoções
- * - Cards de funcionalidades em pé (altura > largura)
- * - Tema Dark/Light funcional
- */
-
 const ACCENT = "#00AF87";
+const FALLBACK_IMG =
+  "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1400&auto=format&fit=crop";
 
-// ---------- THEMES ----------
+/* ========== SAFE IMAGES (com fallback) ========== */
+type ImgProps = {
+  uri: string;
+  style?: any;
+  imageStyle?: any;
+  children?: React.ReactNode;
+};
+
+const SafeImageBackground = ({ uri, style, imageStyle, children }: ImgProps) => {
+  const [src, setSrc] = useState<{ uri: string }>({ uri });
+  const onErr = (_e: NativeSyntheticEvent<ImageErrorEventData>) =>
+    setSrc({ uri: FALLBACK_IMG });
+
+  return (
+    <ImageBackground
+      source={src}
+      style={style}
+      imageStyle={imageStyle}
+      onError={onErr}
+    >
+      {children}
+    </ImageBackground>
+  );
+};
+
+const SafeImage = ({
+  uri,
+  style,
+}: {
+  uri: string;
+  style?: any;
+}) => {
+  const [src, setSrc] = useState<{ uri: string }>({ uri });
+  const onErr = (_e: NativeSyntheticEvent<ImageErrorEventData>) =>
+    setSrc({ uri: FALLBACK_IMG });
+
+  return <Image source={src} style={style} onError={onErr} />;
+};
+
+/* ========== THEMES ========== */
 type Theme = {
   bg: string;
   card: string;
@@ -33,6 +69,8 @@ type Theme = {
   text: string;
   textMuted: string;
   border: string;
+  scrim: string;
+  scrimStrong: string;
 };
 
 const DARK: Theme = {
@@ -42,24 +80,29 @@ const DARK: Theme = {
   text: "#FFFFFF",
   textMuted: "#A1A1AA",
   border: "#23262B",
+  scrim: "rgba(0,0,0,0.28)",
+  scrimStrong: "rgba(0,0,0,0.38)",
 };
 
 const LIGHT: Theme = {
   bg: "#FFFFFF",
-  card: "#F5F7FA",
+  card: "#F8FAFC",
   cardAlt: "#FFFFFF",
   text: "#0F1720",
   textMuted: "#6B7280",
   border: "#E5E7EB",
+  // scrim mais forte no claro para legibilidade sobre fotos
+  scrim: "rgba(0,0,0,0.45)",
+  scrimStrong: "rgba(0,0,0,0.55)",
 };
 
-// ---------- TYPES ----------
+/* ========== TYPES ========== */
 type CardItem = {
   id: string;
   title: string;
   location?: string;
   image: string;
-  rating: number; // 0..5
+  rating: number;
   reviews?: number;
   price?: string;
   badge?: string;
@@ -75,9 +118,9 @@ type FeatureItem = {
 
 type UpcomingItem = {
   id: string;
-  dateLabel: string; // "02 Dez"
-  title: string; // "Trilha Aconcágua"
-  icon: keyof typeof Ionicons.glyphMap; // "map", "airplane", etc.
+  dateLabel: string;
+  title: string;
+  icon: keyof typeof Ionicons.glyphMap;
 };
 
 type CommunityPost = {
@@ -88,111 +131,173 @@ type CommunityPost = {
   image: string;
 };
 
-// ---------- DATA ----------
-const hotels: CardItem[] = [
+/* ========== DATA (genérica e com imagens temáticas) ========== */
+// Stays
+const stays: CardItem[] = [
   {
-    id: "h1",
-    title: "Rancho Encantado",
-    location: "Bacalar, Quintana Roo, Mexico",
+    id: "s1",
+    title: "Hotel Lutetia",
+    location: "Paris, France",
     image:
-      "https://images.unsplash.com/photo-1501117716987-c8e3f1a9d3a7?q=80&w=1200&auto=format&fit=crop",
-    rating: 4.6,
-    reviews: 1762,
-    price: "From $142",
+      "https://images.unsplash.com/photo-1502920917128-1aa500764b8a?q=80&w=1400&auto=format&fit=crop",
+    rating: 4.7,
+    reviews: 2143,
+    price: "From $220",
     badge: "2025",
   },
   {
-    id: "h2",
-    title: "Casa Bakal",
-    location: "Bacalar, Quintana Roo, Mexico",
+    id: "s2",
+    title: "Park Hyatt Tokyo",
+    location: "Tokyo, Japan",
     image:
-      "https://images.unsplash.com/photo-1501117490113-2915e6f0f0a5?q=80&w=1200&auto=format&fit=crop",
-    rating: 4.0,
-    reviews: 293,
-    price: "From $153",
+      "https://images.unsplash.com/photo-1496412705862-e0088f16f791?q=80&w=1400&auto=format&fit=crop",
+    rating: 4.8,
+    reviews: 1872,
+    price: "From $310",
   },
   {
-    id: "h3",
-    title: "Azul Lagoon Resort",
-    location: "Bacalar, Quintana Roo, Mexico",
+    id: "s3",
+    title: "Copacabana Palace",
+    location: "Rio de Janeiro, Brazil",
     image:
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1200&auto=format&fit=crop",
-    rating: 4.8,
-    reviews: 1123,
-    price: "From $189",
+      "https://images.unsplash.com/photo-1505761671935-60b3a7427bad?q=80&w=1400&auto=format&fit=crop",
+    rating: 4.9,
+    reviews: 3564,
+    price: "From $260",
+  },
+  {
+    id: "s4",
+    title: "The Plaza",
+    location: "New York, USA",
+    image:
+      "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?q=80&w=1400&auto=format&fit=crop",
+    rating: 4.6,
+    reviews: 4231,
+    price: "From $340",
+  },
+  {
+    id: "s5",
+    title: "Canaves Oia",
+    location: "Santorini, Greece",
+    image:
+      "https://images.unsplash.com/photo-1505764706515-aa95265c5abc?q=80&w=1400&auto=format&fit=crop",
+    rating: 4.9,
+    reviews: 1978,
+    price: "From $295",
   },
 ];
 
+// Experiences
 const experiences: CardItem[] = [
   {
     id: "e1",
-    title: "Bacalar Boat Tour & Cenotes",
-    location: "Bacalar",
+    title: "Kayak em Halong Bay",
+    location: "Vietnam",
     image:
-      "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1526483360412-f4dbaf036963?q=80&w=1400&auto=format&fit=crop",
     rating: 4.9,
     reviews: 965,
-    price: "From $22 / adult",
+    price: "From $45 / adult",
   },
   {
     id: "e2",
-    title: "Sailing Tour — Laguna de 7 Cores",
-    location: "Bacalar",
+    title: "Aurora Boreal",
+    location: "Tromsø, Norway",
     image:
-      "https://images.unsplash.com/photo-1493558103817-58b2924bce98?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1400&auto=format&fit=crop",
     rating: 5.0,
     reviews: 1391,
-    price: "From $38 / adult",
+    price: "From $120 / adult",
     badge: "2025",
+  },
+  {
+    id: "e3",
+    title: "Safari no Masai Mara",
+    location: "Kenya",
+    image:
+      "https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=1400&auto=format&fit=crop",
+    rating: 4.8,
+    reviews: 751,
+    price: "From $350 / day",
   },
 ];
 
+// Restaurants
 const restaurants: CardItem[] = [
   {
     id: "r1",
-    title: "Nixtamal",
-    location: "Mexican • Steakhouse",
+    title: "Sushi Saito",
+    location: "Tokyo • Sushi",
     image:
-      "https://images.unsplash.com/photo-1521017432531-fbd92d1cf0c7?q=80&w=1200&auto=format&fit=crop",
-    rating: 4.8,
-    reviews: 2354,
+      "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1400&auto=format&fit=crop",
+    rating: 4.9,
+    reviews: 2301,
     price: "$$$$",
-    badge: "2025",
   },
   {
     id: "r2",
-    title: "La Playita",
-    location: "Mexican • Seafood",
+    title: "Le Petit Bistro",
+    location: "Paris • Bistro",
     image:
-      "https://images.unsplash.com/photo-1520207588543-cf2f9cba8496?q=80&w=1200&auto=format&fit=crop",
-    rating: 4.4,
-    reviews: 3260,
+      "https://images.unsplash.com/photo-1470337458703-46ad1756a187?q=80&w=1400&auto=format&fit=crop",
+    rating: 4.6,
+    reviews: 3188,
     price: "$$ • $$$",
+  },
+  {
+    id: "r3",
+    title: "Fogo Carioca",
+    location: "Rio • Churrascaria",
+    image:
+      "https://images.unsplash.com/photo-1544025163-72b0fbf6d9ae?q=80&w=1400&auto=format&fit=crop",
+    rating: 4.5,
+    reviews: 1983,
+    price: "$$ • $$$",
+  },
+  {
+    id: "r4",
+    title: "Joe's Pizza",
+    location: "New York • Pizza",
+    image:
+      "https://images.unsplash.com/photo-1542281286-9e0a16bb7366?q=80&w=1400&auto=format&fit=crop",
+    rating: 4.7,
+    reviews: 4123,
+    price: "$",
+  },
+  {
+    id: "r5",
+    title: "Trattoria Roma",
+    location: "Rome • Pasta",
+    image:
+      "https://images.unsplash.com/photo-1523986371872-9d3ba2e2f642?q=80&w=1400&auto=format&fit=crop",
+    rating: 4.6,
+    reviews: 1677,
+    price: "$$",
   },
 ];
 
-// Funcionalidades (cards em pé)
+// Toolkit (imagens específicas por funcionalidade)
 const features: FeatureItem[] = [
-  { key: "ai",          title: "Ajuda por IA",           subtitle: "Planeje em segundos",   icon: "flash",              image: "https://images.unsplash.com/photo-1526378722484-bd91ca387e72?q=80&w=1400&auto=format&fit=crop" },
-  { key: "diario",      title: "Diário de bordo",        subtitle: "Memórias da viagem",    icon: "book",               image: "https://images.unsplash.com/photo-1460186136353-977e9d6085a1?q=80&w=1400&auto=format&fit=crop" },
-  { key: "itinerario",  title: "Itinerário",             subtitle: "Dia a dia organizado",  icon: "map",                image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1400&auto=format&fit=crop" },
-  { key: "gastos",      title: "Gastos",                 subtitle: "Controle de despesas",  icon: "cash",               image: "https://images.unsplash.com/photo-1567427013953-1d4d7f0f76a0?q=80&w=1400&auto=format&fit=crop" },
-  { key: "agenda",      title: "Agenda",                 subtitle: "Compromissos e alertas",icon: "calendar",           image: "https://images.unsplash.com/photo-1513639725746-c5d3e861f32a?q=80&w=1400&auto=format&fit=crop" },
-  { key: "fotos",       title: "Fotos",                  subtitle: "Álbuns compartilhados", icon: "images",             image: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1400&auto=format&fit=crop" },
-  { key: "porquinho",   title: "Porquinho",              subtitle: "Cofrinho da viagem",    icon: "wallet",             image: "https://images.unsplash.com/photo-1500390368153-b6d9a2a06c59?q=80&w=1400&auto=format&fit=crop" },
-  { key: "especialista",title: "Falar com especialista", subtitle: "Atendimento humano",    icon: "chatbubbles",        image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1400&auto=format&fit=crop" },
+  { key: "ai",          title: "Ajuda por IA",           subtitle: "Planeje em segundos",   icon: "flash",              image: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1400&auto=format&fit=crop" },
+  { key: "diario",      title: "Diário de bordo",        subtitle: "Memórias da viagem",    icon: "book",               image: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0ea?q=80&w=1400&auto=format&fit=crop" },
+  { key: "itinerario",  title: "Itinerário",             subtitle: "Dia a dia organizado",  icon: "map",                image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1400&auto=format&fit=crop" },
+  { key: "gastos",      title: "Gastos",                 subtitle: "Controle de despesas",  icon: "cash",               image: "https://images.unsplash.com/photo-1553729784-e91953dec042?q=80&w=1400&auto=format&fit=crop" },
+  { key: "agenda",      title: "Agenda",                 subtitle: "Compromissos e alertas",icon: "calendar",           image: "https://images.unsplash.com/photo-1516542076529-1ea3854896e1?q=80&w=1400&auto=format&fit=crop" },
+  { key: "fotos",       title: "Fotos",                  subtitle: "Álbuns compartilhados", icon: "images",             image: "https://images.unsplash.com/photo-1519183071298-a2962be96f83?q=80&w=1400&auto=format&fit=crop" },
+  { key: "porquinho",   title: "Porquinho",              subtitle: "Cofrinho da viagem",    icon: "wallet",             image: "https://images.unsplash.com/photo-1605902711834-8b11c3a3e2d7?q=80&w=1400&auto=format&fit=crop" },
+  { key: "especialista",title: "Falar com especialista", subtitle: "Atendimento humano",    icon: "chatbubbles",        image: "https://images.unsplash.com/photo-1525182008055-f88b95ff7980?q=80&w=1400&auto=format&fit=crop" },
   { key: "moedas",      title: "Cotação de moedas",      subtitle: "Câmbio em tempo real",  icon: "swap-horizontal",    image: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?q=80&w=1400&auto=format&fit=crop" },
-  { key: "assessoria",  title: "Assessoria",             subtitle: "Vistos e suporte",      icon: "shield-checkmark",   image: "https://images.unsplash.com/photo-1517898717281-8e4385a4b7c7?q=80&w=1400&auto=format&fit=crop" },
+  { key: "assessoria",  title: "Assessoria",             subtitle: "Vistos e suporte",      icon: "shield-checkmark",   image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=1400&auto=format&fit=crop" },
 ];
 
-// Agenda (Próximos)
+// Upcoming
 const upcoming: UpcomingItem[] = [
   { id: "u1", dateLabel: "24 Nov", title: "Check-in: Rio de Janeiro", icon: "calendar" },
   { id: "u2", dateLabel: "02 Dez", title: "Trilha Aconcágua", icon: "map" },
   { id: "u3", dateLabel: "15 Dez", title: "Voo para Cusco", icon: "airplane" },
 ];
 
-// Da comunidade
+// Community
 const community: CommunityPost[] = [
   {
     id: "c1",
@@ -220,7 +325,7 @@ const community: CommunityPost[] = [
   },
 ];
 
-// Promoção
+// Promo
 const promo = {
   title: "Promoções",
   subtitle: "Novas ofertas todos os dias",
@@ -229,28 +334,23 @@ const promo = {
     "https://images.unsplash.com/photo-1503602642458-232111445657?q=80&w=1200&auto=format&fit=crop",
 };
 
-// ---------- UTILS ----------
+/* ========== DIMENSÕES ========== */
 const Screen = Dimensions.get("window");
 const CARD_W = Math.min(Screen.width * 0.62, 320);
-
-// Feature em pé (altura > largura)
 const FEAT_W = Math.min(Screen.width * 0.56, 260);
 const FEAT_H = Math.round(FEAT_W * 1.5);
-
-// Próximos (carrossel)
 const UPC_W = Math.min(Screen.width * 0.78, 320);
 const UPC_H = 90;
-
-// Comunidade (carrossel)
 const COM_W = Math.min(Screen.width * 0.84, 360);
 const COM_H = 260;
 
+/* ========== UTILS ========== */
 function toDots(n: number): boolean[] {
   const round = Math.round(n);
   return new Array(5).fill(false).map((_, i) => i < round);
 }
 
-// ---------- UI ----------
+/* ========== SHARED UI ========== */
 const SectionHeader = ({
   title,
   action,
@@ -264,7 +364,7 @@ const SectionHeader = ({
     <Text style={styles.h2}>{title}</Text>
     {action && (
       <Pressable onPress={action.onPress} hitSlop={6}>
-        <Text style={[styles.textMuted, { fontWeight: "600", color: ACCENT }]}>
+        <Text style={[styles.textMuted, { fontWeight: "700", color: ACCENT }]}>
           {action.label}
         </Text>
       </Pressable>
@@ -291,12 +391,27 @@ const RatingDots = ({ value }: { value: number }) => {
   );
 };
 
-const HeartButton = ({ active, onToggle }: { active: boolean; onToggle: () => void }) => (
-  <Pressable onPress={onToggle} style={ss.heartBtnOverlay}>
-    <Ionicons name={active ? "heart" : "heart-outline"} size={20} color={active ? "#fff" : "#0F1720"} />
+// coração vermelho quando favoritado
+const HeartButton = ({
+  active,
+  onToggle,
+}: {
+  active: boolean;
+  onToggle: () => void;
+}) => (
+  <Pressable
+    onPress={onToggle}
+    style={[ss.heartBtnOverlay, active && ss.heartBtnActive]}
+  >
+    <Ionicons
+      name={active ? "heart" : "heart-outline"}
+      size={20}
+      color={active ? "#FF3B30" : "#0F1720"}
+    />
   </Pressable>
 );
 
+/* ========== CARDS ========== */
 const SmallCard = ({
   item,
   fav,
@@ -308,19 +423,19 @@ const SmallCard = ({
   onToggleFav: () => void;
   styles: any;
 }) => (
-  <View style={[styles.card, { width: CARD_W }]}>
-    <ImageBackground
-      source={{ uri: item.image }}
+  <View style={[styles.card, styles.shadow, { width: CARD_W }]}>
+    <SafeImageBackground
+      uri={item.image}
       style={styles.cardImage}
       imageStyle={{ borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
     >
       {item.badge && (
         <View style={styles.badge}>
-          <Text style={{ color: "#0A0A0B", fontWeight: "800" }}>{item.badge}</Text>
+          <Text style={{ color: "#0A1C16", fontWeight: "800" }}>{item.badge}</Text>
         </View>
       )}
       <HeartButton active={fav} onToggle={onToggleFav} />
-    </ImageBackground>
+    </SafeImageBackground>
 
     <View style={{ padding: 12, gap: 6 }}>
       <Text numberOfLines={1} style={styles.cardTitle}>
@@ -330,7 +445,9 @@ const SmallCard = ({
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <Text style={[styles.text, { fontWeight: "700" }]}>{item.rating.toFixed(1)}</Text>
         <RatingDots value={item.rating} />
-        {item.reviews != null && <Text style={styles.textMuted}>({item.reviews.toLocaleString()})</Text>}
+        {item.reviews != null && (
+          <Text style={styles.textMuted}>({item.reviews.toLocaleString()})</Text>
+        )}
       </View>
 
       {item.location && (
@@ -344,14 +461,10 @@ const SmallCard = ({
   </View>
 );
 
-// Feature card em pé
+// Toolkit card
 const FeatureCard = ({ item, styles }: { item: FeatureItem; styles: any }) => (
-  <Pressable style={styles.featureCard}>
-    <ImageBackground
-      source={{ uri: item.image }}
-      style={{ flex: 1 }}
-      imageStyle={{ borderRadius: 16 }}
-    >
+  <Pressable style={[styles.featureCard, styles.shadow]}>
+    <SafeImageBackground uri={item.image} style={{ flex: 1 }} imageStyle={{ borderRadius: 16 }}>
       <View style={styles.featureScrim} />
       <View style={{ position: "absolute", left: 12, right: 12, top: 12, flexDirection: "row", alignItems: "center", gap: 8 }}>
         <View style={styles.featurePill}>
@@ -363,28 +476,30 @@ const FeatureCard = ({ item, styles }: { item: FeatureItem; styles: any }) => (
         <Text style={{ color: "#fff", fontWeight: "800", fontSize: 18 }}>{item.title}</Text>
         {item.subtitle && <Text style={{ color: "#F3F4F6", fontSize: 13, marginTop: 2 }}>{item.subtitle}</Text>}
       </View>
-    </ImageBackground>
+    </SafeImageBackground>
   </Pressable>
 );
 
-// Próximos (agenda)
+// Próximos
 const UpcomingCard = ({ item, styles }: { item: UpcomingItem; styles: any }) => (
-  <Pressable style={styles.upcCard}>
+  <Pressable style={[styles.upcCard, styles.shadow]}>
     <View style={styles.upcIconPill}>
       <Ionicons name={item.icon} size={18} color={ACCENT} />
     </View>
     <View style={{ flex: 1 }}>
       <Text style={[styles.textMuted, { fontWeight: "700" }]}>{item.dateLabel}</Text>
-      <Text numberOfLines={1} style={[styles.text, { fontWeight: "800", fontSize: 16 }]}>{item.title}</Text>
+      <Text numberOfLines={1} style={[styles.text, { fontWeight: "800", fontSize: 16 }]}>
+        {item.title}
+      </Text>
     </View>
   </Pressable>
 );
 
-// Comunidade (post)
+// Comunidade
 const CommunityCard = ({ post, styles }: { post: CommunityPost; styles: any }) => (
-  <Pressable style={styles.comCard}>
-    <ImageBackground
-      source={{ uri: post.image }}
+  <Pressable style={[styles.comCard, styles.shadow]}>
+    <SafeImageBackground
+      uri={post.image}
       style={{ height: COM_H * 0.62 }}
       imageStyle={{ borderTopLeftRadius: 18, borderTopRightRadius: 18 }}
     >
@@ -395,7 +510,7 @@ const CommunityCard = ({ post, styles }: { post: CommunityPost; styles: any }) =
           {post.title}
         </Text>
       </View>
-    </ImageBackground>
+    </SafeImageBackground>
 
     <View style={{ padding: 14, paddingTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
       <Text style={[styles.textMuted]}>
@@ -408,26 +523,23 @@ const CommunityCard = ({ post, styles }: { post: CommunityPost; styles: any }) =
   </Pressable>
 );
 
-// Promo (card único)
+// Promo
 const PromoCard = ({ styles }: { styles: any }) => (
-  <Pressable style={styles.promoCard}>
+  <Pressable style={[styles.promoCard, styles.shadow]}>
     <View style={{ flex: 1, padding: 16, gap: 8 }}>
       <Text style={{ color: ACCENT, fontWeight: "800" }}>Promoções</Text>
-      <Text style={[styles.text, { fontSize: 18, fontWeight: "800", lineHeight: 22 }]}>
+      <Text style={{ color: styles.text.color, fontSize: 18, fontWeight: "800", lineHeight: 22 }}>
         Novas ofertas todos os dias
       </Text>
       <Pressable style={styles.ghostCta}>
         <Text style={{ color: ACCENT, fontWeight: "700" }}>Ver agora</Text>
       </Pressable>
     </View>
-    <Image
-      source={{ uri: promo.image }}
-      style={{ width: 130, height: 96, borderRadius: 12, marginRight: 16 }}
-    />
+    <SafeImage uri={promo.image} style={{ width: 130, height: 96, borderRadius: 12, marginRight: 16 }} />
   </Pressable>
 );
 
-// ---------- HEADER ----------
+/* ========== HEADER & BOTTOM ========== */
 const Header = ({
   theme,
   styles,
@@ -453,7 +565,6 @@ const Header = ({
   return (
     <View style={{ backgroundColor: theme.bg }}>
       <View style={[styles.headerLightWrap, { paddingTop: topInset + 8 }]}>
-        {/* topo */}
         <View style={styles.headerLightTop}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <View style={styles.logoCircle}>
@@ -461,12 +572,12 @@ const Header = ({
             </View>
             <Text style={styles.brandLight}>EasyTrip</Text>
           </View>
-        <Pressable style={styles.bellBtn} hitSlop={8} onPress={onToggleTheme}>
+          <Pressable style={styles.bellBtn} hitSlop={8} onPress={onToggleTheme}>
             <Ionicons name={isDark ? "sunny" : "moon"} size={18} color={theme.text} />
           </Pressable>
         </View>
 
-        {/* search pill funcional */}
+        {/* Search */}
         <View style={styles.searchPill}>
           <Ionicons name="search" size={18} color={theme.textMuted} style={{ marginRight: 8 }} />
           <View style={{ flex: 1 }}>
@@ -482,12 +593,22 @@ const Header = ({
           </View>
         </View>
 
-        {/* chips + dropdowns (carrossel horizontal) */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsCarouselScroll} contentContainerStyle={styles.chipsCarousel}>
+        {/* Chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.chipsCarouselScroll}
+          contentContainerStyle={styles.chipsCarousel}
+        >
           {Object.keys(opts).map((label) => (
             <View key={label} style={styles.chipWrap}>
-              <Pressable style={styles.lightChip} onPress={() => setOpen(open === label ? null : label)}>
-                <Text style={{ color: theme.text, fontSize: 12, fontWeight: "600" }}>{label}</Text>
+              <Pressable
+                style={styles.lightChip}
+                onPress={() => setOpen(open === label ? null : label)}
+              >
+                <Text style={{ color: theme.text, fontSize: 12, fontWeight: "600" }}>
+                  {label}
+                </Text>
                 <Ionicons name="chevron-down" size={14} color={theme.text} />
               </Pressable>
 
@@ -508,7 +629,6 @@ const Header = ({
   );
 };
 
-// ---------- BOTTOM BAR ----------
 const BottomBar = ({ theme, styles }: { theme: Theme; styles: any }) => {
   const items = [
     { key: "explore", label: "Home", icon: "home-outline", activeIcon: "home" },
@@ -542,7 +662,7 @@ const BottomBar = ({ theme, styles }: { theme: Theme; styles: any }) => {
   );
 };
 
-// ---------- MAIN ----------
+/* ========== MAIN ========== */
 export default function Home() {
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [isDark, setIsDark] = useState(true);
@@ -560,34 +680,43 @@ export default function Home() {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <View style={{ paddingHorizontal: 16, gap: 20 }}>
-          {/* Banner */}
-          <ImageBackground
-            source={{ uri: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1400&auto=format&fit=crop" }}
+          {/* Hero (imagem trocada no editors mais abaixo) */}
+          <SafeImageBackground
+            uri="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1400&auto=format&fit=crop"
             style={styles.hero}
             imageStyle={{ borderRadius: 20 }}
           >
             <View style={styles.heroScrim} />
             <View style={{ position: "absolute", left: 16, bottom: 16, right: 16 }}>
-              <Text style={[styles.text, { opacity: 0.8, marginBottom: 6 }]}>EasyTrip Rewards</Text>
-              <Text style={styles.h1}>Get 5% back on hotels in Bacalar</Text>
-              <Pressable style={styles.cta}><Text style={[styles.text, { fontWeight: "700" }]}>Find a hotel</Text></Pressable>
+              <Text style={{ color: "#fff", opacity: 0.9, marginBottom: 6 }}>EasyTrip Rewards</Text>
+              <Text style={[styles.h1, { color: "#fff" }]}>Get 5% back on top stays</Text>
+              <Pressable style={styles.cta}>
+                <Text style={{ color: "#0A0A0B", fontWeight: "800" }}>Find a hotel</Text>
+              </Pressable>
             </View>
-          </ImageBackground>
+          </SafeImageBackground>
 
-          {/* Hotels */}
-          <SectionHeader title="Get 5% back on top-rated hotels" action={{ label: "View all", onPress: () => {} }} styles={styles} />
+          {/* Stays (título curto) */}
+          <SectionHeader title="Top stays" action={{ label: "View all", onPress: () => {} }} styles={styles} />
           <FlatList
             horizontal
-            data={hotels}
+            data={stays}
             keyExtractor={(i) => i.id}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 6 }}
             ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
-            renderItem={({ item }) => <SmallCard item={item} fav={!!favorites[item.id]} onToggleFav={() => toggleFav(item.id)} styles={styles} />}
+            renderItem={({ item }) => (
+              <SmallCard
+                item={item}
+                fav={!!favorites[item.id]}
+                onToggleFav={() => toggleFav(item.id)}
+                styles={styles}
+              />
+            )}
           />
 
           {/* Experiences */}
-          <SectionHeader title="Must-do experiences in Bacalar" action={{ label: "View all", onPress: () => {} }} styles={styles} />
+          <SectionHeader title="Must-do experiences" action={{ label: "View all", onPress: () => {} }} styles={styles} />
           <FlatList
             horizontal
             data={experiences}
@@ -595,11 +724,18 @@ export default function Home() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 6 }}
             ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
-            renderItem={({ item }) => <SmallCard item={item} fav={!!favorites[item.id]} onToggleFav={() => toggleFav(item.id)} styles={styles} />}
+            renderItem={({ item }) => (
+              <SmallCard
+                item={item}
+                fav={!!favorites[item.id]}
+                onToggleFav={() => toggleFav(item.id)}
+                styles={styles}
+              />
+            )}
           />
 
           {/* Restaurants */}
-          <SectionHeader title="Top restaurants in Bacalar" action={{ label: "View all", onPress: () => {} }} styles={styles} />
+          <SectionHeader title="Popular restaurants" action={{ label: "View all", onPress: () => {} }} styles={styles} />
           <FlatList
             horizontal
             data={restaurants}
@@ -607,10 +743,17 @@ export default function Home() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 6 }}
             ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
-            renderItem={({ item }) => <SmallCard item={item} fav={!!favorites[item.id]} onToggleFav={() => toggleFav(item.id)} styles={styles} />}
+            renderItem={({ item }) => (
+              <SmallCard
+                item={item}
+                fav={!!favorites[item.id]}
+                onToggleFav={() => toggleFav(item.id)}
+                styles={styles}
+              />
+            )}
           />
 
-          {/* ===== NOVO: Próximos (agenda) ===== */}
+          {/* Próximos */}
           <SectionHeader title="Próximos" action={{ label: "Ver agenda", onPress: () => {} }} styles={styles} />
           <FlatList
             horizontal
@@ -621,7 +764,7 @@ export default function Home() {
             renderItem={({ item }) => <UpcomingCard item={item} styles={styles} />}
           />
 
-          {/* ===== NOVO: Da comunidade ===== */}
+          {/* Da comunidade */}
           <SectionHeader title="Da comunidade" action={{ label: "Ver mais", onPress: () => {} }} styles={styles} />
           <FlatList
             horizontal
@@ -632,11 +775,11 @@ export default function Home() {
             renderItem={({ item }) => <CommunityCard post={item} styles={styles} />}
           />
 
-          {/* ===== NOVO: Promoções ===== */}
+          {/* Promoções */}
           <PromoCard styles={styles} />
 
-          {/* ===== Ferramentas do EasyTrip (em pé) ===== */}
-          <SectionHeader title="Ferramentas do EasyTrip" styles={styles} />
+          {/* Toolkit */}
+          <SectionHeader title="Seu toolkit de viagem" styles={styles} />
           <FlatList
             horizontal
             data={features}
@@ -647,19 +790,23 @@ export default function Home() {
             renderItem={({ item }) => <FeatureCard item={item} styles={styles} />}
           />
 
-          {/* From Editors */}
+          {/* From our editors — IMAGEM TROCADA */}
           <SectionHeader title="From our editors" styles={styles} />
-          <ImageBackground
-            source={{ uri: "https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1400&auto=format&fit=crop" }}
+          <SafeImageBackground
+            uri="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?q=80&w=1400&auto=format&fit=crop"
             style={{ height: 220, borderRadius: 20, overflow: "hidden" }}
             imageStyle={{ borderRadius: 20 }}
           >
             <View style={styles.editorScrim} />
             <View style={{ position: "absolute", left: 16, bottom: 16 }}>
-              <Text style={styles.h3}>6 must-visit ghost towns in the American West</Text>
-              <Pressable style={[styles.cta, { marginTop: 8 }]}><Text style={[styles.text, { fontWeight: "700" }]}>Explore</Text></Pressable>
+              <Text style={[styles.h3, { color: "#fff" }]}>
+                Scenic roads you can’t miss this season
+              </Text>
+              <Pressable style={[styles.cta, { marginTop: 8 }]}>
+                <Text style={{ color: "#0A0A0B", fontWeight: "800" }}>Explore</Text>
+              </Pressable>
             </View>
-          </ImageBackground>
+          </SafeImageBackground>
         </View>
       </ScrollView>
 
@@ -668,9 +815,10 @@ export default function Home() {
   );
 }
 
-// ---------- STYLES (dinâmicos por tema) ----------
-const createStyles = (theme: Theme) =>
-  StyleSheet.create({
+/* ========== STYLES (com sombra no light) ========== */
+const createStyles = (theme: Theme) => {
+  const isLight = theme.bg === "#FFFFFF";
+  return StyleSheet.create({
     safe: { flex: 1, backgroundColor: theme.bg },
 
     text: { color: theme.text },
@@ -680,7 +828,18 @@ const createStyles = (theme: Theme) =>
     h2: { color: theme.text, fontSize: 20, fontWeight: "800" },
     h3: { color: theme.text, fontSize: 18, fontWeight: "800", lineHeight: 22 },
 
-    // Header
+    // sombra aplicada nos cards apenas no light
+    shadow: isLight
+      ? {
+          shadowColor: "#000",
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: 6 },
+          elevation: 5,
+        }
+      : {},
+
+    /* Header */
     headerLightWrap: {
       paddingHorizontal: 16,
       paddingBottom: 12,
@@ -703,7 +862,7 @@ const createStyles = (theme: Theme) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    logoStar: { color: "#0A0A0B", fontSize: 14, lineHeight: 16, fontWeight: "900" }, // ✦
+    logoStar: { color: "#0A0A0B", fontSize: 14, lineHeight: 16, fontWeight: "900" },
     brandLight: { color: theme.text, fontSize: 18, fontWeight: "800", letterSpacing: 0.2 },
     bellBtn: {
       width: 36,
@@ -726,7 +885,7 @@ const createStyles = (theme: Theme) =>
       alignItems: "center",
     },
 
-    // Chips (carrossel)
+    // Chips
     chipsCarouselScroll: { overflow: "visible" },
     chipsCarousel: { paddingTop: 10, paddingBottom: 2, paddingRight: 8 },
     chipWrap: { position: "relative", marginRight: 8, overflow: "visible" },
@@ -756,14 +915,15 @@ const createStyles = (theme: Theme) =>
     },
     dropdownItem: { paddingVertical: 10, paddingHorizontal: 12 },
 
-    // Conteúdo
+    /* Conteúdo */
     hero: {
       height: 220,
       borderRadius: 20,
       overflow: "hidden",
       backgroundColor: theme.card,
     },
-    heroScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.25)" },
+    heroScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: theme.scrimStrong },
+
     cta: {
       marginTop: 10,
       alignSelf: "flex-start",
@@ -781,7 +941,7 @@ const createStyles = (theme: Theme) =>
       justifyContent: "space-between",
     },
 
-    // Cards (hotéis/experiências/restaurantes)
+    /* Cards comuns */
     card: {
       backgroundColor: theme.cardAlt,
       borderRadius: 16,
@@ -801,7 +961,7 @@ const createStyles = (theme: Theme) =>
     },
     cardTitle: { color: theme.text, fontWeight: "800", fontSize: 16 },
 
-    // Próximos
+    /* Próximos */
     upcCard: {
       width: UPC_W,
       height: UPC_H,
@@ -818,14 +978,14 @@ const createStyles = (theme: Theme) =>
       width: 40,
       height: 40,
       borderRadius: 12,
-      backgroundColor: Platform.OS === "ios" ? "rgba(56,242,193,0.15)" : "#0F1115",
+      backgroundColor: "rgba(56,242,193,0.15)",
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,
       borderColor: theme.border,
     },
 
-    // Comunidade
+    /* Comunidade */
     comCard: {
       width: COM_W,
       height: COM_H,
@@ -835,9 +995,9 @@ const createStyles = (theme: Theme) =>
       borderColor: theme.border,
       overflow: "hidden",
     },
-    comScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.28)" },
+    comScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: theme.scrim },
 
-    // Ghost CTA (bordas verdes)
+    /* Ghost CTA */
     ghostCta: {
       paddingVertical: 8,
       paddingHorizontal: 16,
@@ -847,7 +1007,7 @@ const createStyles = (theme: Theme) =>
       backgroundColor: "transparent",
     },
 
-    // Promoções
+    /* Promoções */
     promoCard: {
       width: Screen.width - 32,
       borderRadius: 18,
@@ -859,7 +1019,7 @@ const createStyles = (theme: Theme) =>
       overflow: "hidden",
     },
 
-    // Feature cards (em pé)
+    /* Toolkit (features) */
     featureCard: {
       width: FEAT_W,
       height: FEAT_H,
@@ -869,7 +1029,7 @@ const createStyles = (theme: Theme) =>
       borderWidth: 1,
       borderColor: theme.border,
     },
-    featureScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.25)" },
+    featureScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: theme.scrim },
     featurePill: {
       alignSelf: "flex-start",
       backgroundColor: "#38F2C1",
@@ -878,15 +1038,10 @@ const createStyles = (theme: Theme) =>
       borderRadius: 999,
     },
 
-    editorScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.35)" },
+    editorScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: theme.scrimStrong },
 
-    // Bottom bar
-    bottomBarWrap: {
-      position: "absolute",
-      left: 0,
-      right: 0,
-      bottom: 0,
-    },
+    /* Bottom bar */
+    bottomBarWrap: { position: "absolute", left: 0, right: 0, bottom: 0 },
     bottomBar: {
       flexDirection: "row",
       alignItems: "center",
@@ -900,8 +1055,9 @@ const createStyles = (theme: Theme) =>
     bottomItem: { flex: 1, alignItems: "center", justifyContent: "center", gap: 2 },
     bottomLabel: { fontSize: 11, fontWeight: "600" },
   });
+};
 
-// Botão de coração sobre a imagem (fixo, não depende do tema)
+/* coração overlay */
 const ss = StyleSheet.create({
   heartBtnOverlay: {
     position: "absolute",
@@ -913,5 +1069,9 @@ const ss = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#FFFFFF",
+  },
+  heartBtnActive: {
+    borderWidth: 1,
+    borderColor: "#FF3B30",
   },
 });
