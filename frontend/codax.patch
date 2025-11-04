@@ -1,0 +1,270 @@
+
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/frontend/app/index.tsx b/frontend/app/index.tsx
+index a918b48ecf2d23fa6d37ffac53cd33f62e65f0c8..7263e4a21ed1a50045dad8efd90b1acc1e1df9b1 100644
+--- a/frontend/app/index.tsx
++++ b/frontend/app/index.tsx
+@@ -3,97 +3,97 @@ import {
+   View,
+   Text,
+   ScrollView,
+   StyleSheet,
+   TouchableOpacity,
+   Image,
+   FlatList,
+   Dimensions,
+ } from 'react-native';
+ import { SafeAreaView } from 'react-native-safe-area-context';
+ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+ 
+ const ACCENT = '#00AF87';
+ const BG = '#f4f6f5';
+ const TEXT = '#101623';
+ const SUBTLE = '#6c7a89';
+ const CARD = '#ffffff';
+ const { width } = Dimensions.get('window');
+ 
+ const quickActions = [
+   { key: 'ofertas', label: 'Ofertas', icon: 'pricetags-outline' },
+   { key: 'dicas', label: 'Dicas', icon: 'compass-outline' },
+   { key: 'rede', label: 'Rede Social', icon: 'people-outline' },
+   { key: 'especialista', label: 'Especialista', icon: 'chatbubbles-outline' },
+   { key: 'vistos', label: 'Assessoria de Visto', icon: 'shield-checkmark-outline' },
+-  { key: 'currency', label: 'Currency', icon: 'cash-outline' },
++  { key: 'currency', label: 'Câmbio', icon: 'cash-outline' },
+   { key: 'ia', label: 'Assistente IA', icon: 'sparkles-outline' },
+   { key: 'fotos', label: 'Capturar Fotos', icon: 'camera-outline' },
+ ];
+ 
+ const serviceGroups = [
+   {
+     title: 'Planejamento Inteligente',
+     description: 'Monte itinerários, organize agenda e deixe a IA otimizar sua viagem.',
+     items: [
+       { key: 'itinerario', title: 'Itinerários', icon: 'map-outline' },
+       { key: 'agenda', title: 'Agenda', icon: 'calendar-outline' },
+       { key: 'gastos', title: 'Controle de gastos', icon: 'wallet-outline' },
+       { key: 'diario', title: 'Diário de bordo', icon: 'book-outline' },
+     ],
+   },
+   {
+     title: 'Conecte-se com a comunidade',
+     description: 'Troque experiências, peça ajuda a especialistas e compartilhe memórias.',
+     items: [
+       { key: 'social', title: 'Feed de viajantes', icon: 'newspaper-outline' },
+       { key: 'expert', title: 'Falar com especialista', icon: 'person-circle-outline' },
+       { key: 'grupos', title: 'Grupos por destino', icon: 'chatbubble-ellipses-outline' },
+     ],
+   },
+ ];
+ 
+ const offers = [
+   {
+     id: '1',
+-    title: 'Noronha Minimal Escape',
++    title: 'Escape Minimalista em Noronha',
+     subtitle: '4 noites com mergulho incluso',
+     price: 'A partir de R$ 2.890',
+     image:
+       'https://images.unsplash.com/photo-1518544889280-4f66c7dbe4eb?q=80&w=1200&auto=format&fit=crop',
+   },
+   {
+     id: '2',
+-    title: 'Buenos Aires Express',
++    title: 'Buenos Aires Expresso',
+     subtitle: 'City tour e show de tango',
+     price: 'A partir de R$ 1.550',
+     image:
+       'https://images.unsplash.com/photo-1508599589921-901ea443707f?q=80&w=1200&auto=format&fit=crop',
+   },
+   {
+     id: '3',
+-    title: 'Patagônia Essential',
++    title: 'Patagônia Essencial',
+     subtitle: 'Expedição guiada com especialistas',
+     price: 'A partir de R$ 4.320',
+     image:
+       'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop',
+   },
+ ];
+ 
+ const places = {
+   hotels: [
+     {
+       id: 'h1',
+       name: 'Hotel Horizonte Verde',
+       description: 'Design minimalista, spa & rooftop garden.',
+       image:
+         'https://images.unsplash.com/photo-1512914890250-353c57b12435?q=80&w=1200&auto=format&fit=crop',
+       rating: '4.8',
+     },
+     {
+       id: 'h2',
+       name: 'Aurora Boutique',
+       description: 'Suites inteligentes com assistente virtual.',
+       image:
+         'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?q=80&w=1200&auto=format&fit=crop',
+       rating: '4.9',
+     },
+@@ -103,51 +103,51 @@ const places = {
+       id: 'r1',
+       name: 'Verde + Mar',
+       description: 'Mariscos frescos e atmosfera clean.',
+       image:
+         'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=1200&auto=format&fit=crop',
+       rating: '4.7',
+     },
+     {
+       id: 'r2',
+       name: 'Minimal Coffee Lab',
+       description: 'Cafés especiais e brunch autoral.',
+       image:
+         'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200&auto=format&fit=crop',
+       rating: '4.9',
+     },
+   ],
+ };
+ 
+ const communityPosts = [
+   {
+     id: 'p1',
+     user: 'Gabriela M.',
+     time: 'há 2h',
+     text: 'Acabei de voltar da Chapada dos Veadeiros e deixei meu roteiro completo na seção de itinerários. Vale cada trilha! 💚',
+     image:
+-      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop',
++      'https://images.unsplash.com/photo-1504595403659-9088ce801e29?q=80&w=1200&auto=format&fit=crop',
+   },
+   {
+     id: 'p2',
+     user: 'Leo A.',
+     time: 'há 5h',
+     text: 'Alguém já usou a consultoria de vistos para o Canadá? Atendimento super rápido, recomendo!',
+     image:
+       'https://images.unsplash.com/photo-1528909514045-2fa4ac7a08ba?q=80&w=1200&auto=format&fit=crop',
+   },
+ ];
+ 
+ const insights = [
+   {
+     id: 'i1',
+     title: 'Câmbio em tempo real',
+     description: 'Veja cotações atualizadas e receba alertas personalizados.',
+     icon: 'trending-up',
+   },
+   {
+     id: 'i2',
+     title: 'Assistente IA 24/7',
+     description: 'Crie itinerários, traduções e checklists instantâneos.',
+     icon: 'robot-outline',
+   },
+   {
+@@ -273,51 +273,51 @@ export default function HomeScreen() {
+           <View style={styles.heroHeader}>
+             <View>
+               <Text style={styles.heroGreeting}>Olá, explorador(a)</Text>
+               <Text style={styles.heroTitle}>Planeje viagens memoráveis com tranquilidade</Text>
+             </View>
+             <View style={styles.heroBadge}>
+               <Ionicons name="sparkles" size={18} color={ACCENT} />
+               <Text style={styles.heroBadgeText}>IA ativa</Text>
+             </View>
+           </View>
+           <Text style={styles.heroSubtitle}>
+             Ofertas, dicas, rede social, consultoria especializada e ferramentas inteligentes reunidas em uma
+             experiência minimalista.
+           </Text>
+           <View style={styles.heroCTAGroup}>
+             <TouchableOpacity style={[styles.heroButton, styles.primaryButton]} activeOpacity={0.9}>
+               <Text style={styles.primaryButtonText}>Criar roteiro com IA</Text>
+             </TouchableOpacity>
+             <TouchableOpacity style={[styles.heroButton, styles.secondaryButton]} activeOpacity={0.9}>
+               <Text style={styles.secondaryButtonText}>Ver próximas viagens</Text>
+             </TouchableOpacity>
+           </View>
+         </View>
+ 
+         <View style={styles.section}>
+-          <SectionHeader title="Ferramentas rápidas" subtitle="Acesse tudo o que precisa em poucos toques." />
++          <SectionHeader title="Atalhos inteligentes" subtitle="Acesse tudo o que precisa em poucos toques." />
+           <View style={styles.actionsGrid}>
+             {quickActions.map((action) => (
+               <ActionPill key={action.key} icon={action.icon} label={action.label} />
+             ))}
+           </View>
+         </View>
+ 
+         <View style={styles.section}>
+           <SectionHeader
+             title="Ofertas selecionadas"
+             subtitle="Viagens curadas para diferentes estilos e orçamentos."
+           />
+           <FlatList
+             horizontal
+             data={offers}
+             renderItem={({ item }) => <OfferCard item={item} />}
+             keyExtractor={(item) => item.id}
+             showsHorizontalScrollIndicator={false}
+             contentContainerStyle={{ paddingHorizontal: 4 }}
+           />
+         </View>
+ 
+         <View style={styles.section}>
+           <SectionHeader
+             title="Serviços essenciais"
+@@ -520,51 +520,51 @@ const styles = StyleSheet.create({
+     minHeight: 64,
+     borderRadius: 18,
+     padding: 14,
+     backgroundColor: CARD,
+     flexDirection: 'row',
+     alignItems: 'center',
+     gap: 12,
+     shadowColor: '#0c1812',
+     shadowOpacity: 0.06,
+     shadowRadius: 8,
+     shadowOffset: { width: 0, height: 6 },
+     elevation: 2,
+   },
+   actionIconBox: {
+     width: 36,
+     height: 36,
+     borderRadius: 12,
+     backgroundColor: '#e8f9f4',
+     alignItems: 'center',
+     justifyContent: 'center',
+   },
+   actionLabel: {
+     flex: 1,
+     fontSize: 14,
+     fontWeight: '500',
+-    color: TEXT,
++    color: ACCENT,
+   },
+   offerCard: {
+     width: 260,
+     marginRight: 16,
+     backgroundColor: CARD,
+     borderRadius: 24,
+     overflow: 'hidden',
+     shadowColor: '#0c1812',
+     shadowOpacity: 0.08,
+     shadowRadius: 10,
+     shadowOffset: { width: 0, height: 8 },
+     elevation: 3,
+   },
+   offerImage: {
+     width: '100%',
+     height: 150,
+   },
+   offerContent: {
+     padding: 16,
+     gap: 8,
+   },
+   offerTitle: {
+     fontSize: 16,
+     fontWeight: '600',
+     color: TEXT,
+ 
+EOF
+)
