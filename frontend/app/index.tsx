@@ -25,7 +25,7 @@ const quickActions = [
   { key: 'rede', label: 'Rede Social', icon: 'people-outline' },
   { key: 'especialista', label: 'Especialista', icon: 'chatbubbles-outline' },
   { key: 'vistos', label: 'Assessoria de Visto', icon: 'shield-checkmark-outline' },
-  { key: 'currency', label: 'Currency', icon: 'cash-outline' },
+  { key: 'currency', label: 'Câmbio', icon: 'cash-outline' },
   { key: 'ia', label: 'Assistente IA', icon: 'sparkles-outline' },
   { key: 'fotos', label: 'Capturar Fotos', icon: 'camera-outline' },
 ];
@@ -55,7 +55,7 @@ const serviceGroups = [
 const offers = [
   {
     id: '1',
-    title: 'Noronha Minimal Escape',
+    title: 'Escape Minimalista em Noronha',
     subtitle: '4 noites com mergulho incluso',
     price: 'A partir de R$ 2.890',
     image:
@@ -63,7 +63,7 @@ const offers = [
   },
   {
     id: '2',
-    title: 'Buenos Aires Express',
+    title: 'Buenos Aires Expresso',
     subtitle: 'City tour e show de tango',
     price: 'A partir de R$ 1.550',
     image:
@@ -71,7 +71,7 @@ const offers = [
   },
   {
     id: '3',
-    title: 'Patagônia Essential',
+    title: 'Patagônia Essencial',
     subtitle: 'Expedição guiada com especialistas',
     price: 'A partir de R$ 4.320',
     image:
@@ -125,7 +125,7 @@ const communityPosts = [
     time: 'há 2h',
     text: 'Acabei de voltar da Chapada dos Veadeiros e deixei meu roteiro completo na seção de itinerários. Vale cada trilha! 💚',
     image:
-      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1504595403659-9088ce801e29?q=80&w=1200&auto=format&fit=crop',
   },
   {
     id: 'p2',
@@ -295,7 +295,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
-          <SectionHeader title="Ferramentas rápidas" subtitle="Acesse tudo o que precisa em poucos toques." />
+          <SectionHeader title="Atalhos inteligentes" subtitle="Acesse tudo o que precisa em poucos toques." />
           <View style={styles.actionsGrid}>
             {quickActions.map((action) => (
               <ActionPill key={action.key} icon={action.icon} label={action.label} />
@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '500',
-    color: TEXT,
+    color: ACCENT,
   },
   offerCard: {
     width: 260,
