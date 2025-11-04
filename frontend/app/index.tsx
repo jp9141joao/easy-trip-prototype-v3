@@ -22,7 +22,7 @@ const ACCENT = "#00AF87";
 const FALLBACK_IMG =
   "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1400&auto=format&fit=crop";
 
-/* ========== SAFE IMAGES (com fallback) ========== */
+/* ========== IMAGENS SEGURAS (com fallback) ========== */
 type ImgProps = {
   uri: string;
   style?: any;
@@ -61,7 +61,7 @@ const SafeImage = ({
   return <Image source={src} style={style} onError={onErr} />;
 };
 
-/* ========== THEMES ========== */
+/* ========== TEMAS ========== */
 type Theme = {
   bg: string;
   card: string;
@@ -96,7 +96,7 @@ const LIGHT: Theme = {
   scrimStrong: "rgba(0,0,0,0.55)",
 };
 
-/* ========== TYPES ========== */
+/* ========== TIPAGENS ========== */
 type CardItem = {
   id: string;
   title: string;
@@ -131,29 +131,29 @@ type CommunityPost = {
   image: string;
 };
 
-/* ========== DATA (genérica e com imagens temáticas) ========== */
-// Stays
+/* ========== DADOS (genéricos e com imagens temáticas) ========== */
+// Hospedagens
 const stays: CardItem[] = [
   {
     id: "s1",
     title: "Hotel Lutetia",
-    location: "Paris, France",
+    location: "Paris, França",
     image:
       "https://images.unsplash.com/photo-1502920917128-1aa500764b8a?q=80&w=1400&auto=format&fit=crop",
     rating: 4.7,
     reviews: 2143,
-    price: "From $220",
+    price: "A partir de US$ 220",
     badge: "2025",
   },
   {
     id: "s2",
     title: "Park Hyatt Tokyo",
-    location: "Tokyo, Japan",
+    location: "Tóquio, Japão",
     image:
       "https://images.unsplash.com/photo-1496412705862-e0088f16f791?q=80&w=1400&auto=format&fit=crop",
     rating: 4.8,
     reviews: 1872,
-    price: "From $310",
+    price: "A partir de US$ 310",
   },
   {
     id: "s3",
@@ -163,71 +163,71 @@ const stays: CardItem[] = [
       "https://images.unsplash.com/photo-1505761671935-60b3a7427bad?q=80&w=1400&auto=format&fit=crop",
     rating: 4.9,
     reviews: 3564,
-    price: "From $260",
+    price: "A partir de US$ 260",
   },
   {
     id: "s4",
     title: "The Plaza",
-    location: "New York, USA",
+    location: "Nova York, EUA",
     image:
       "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?q=80&w=1400&auto=format&fit=crop",
     rating: 4.6,
     reviews: 4231,
-    price: "From $340",
+    price: "A partir de US$ 340",
   },
   {
     id: "s5",
     title: "Canaves Oia",
-    location: "Santorini, Greece",
+    location: "Santorini, Grécia",
     image:
       "https://images.unsplash.com/photo-1505764706515-aa95265c5abc?q=80&w=1400&auto=format&fit=crop",
     rating: 4.9,
     reviews: 1978,
-    price: "From $295",
+    price: "A partir de US$ 295",
   },
 ];
 
-// Experiences
+// Experiências
 const experiences: CardItem[] = [
   {
     id: "e1",
     title: "Kayak em Halong Bay",
-    location: "Vietnam",
+    location: "Vietnã",
     image:
       "https://images.unsplash.com/photo-1526483360412-f4dbaf036963?q=80&w=1400&auto=format&fit=crop",
     rating: 4.9,
     reviews: 965,
-    price: "From $45 / adult",
+    price: "A partir de US$ 45 / adulto",
   },
   {
     id: "e2",
     title: "Aurora Boreal",
-    location: "Tromsø, Norway",
+    location: "Tromsø, Noruega",
     image:
       "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=1400&auto=format&fit=crop",
     rating: 5.0,
     reviews: 1391,
-    price: "From $120 / adult",
+    price: "A partir de US$ 120 / adulto",
     badge: "2025",
   },
   {
     id: "e3",
     title: "Safari no Masai Mara",
-    location: "Kenya",
+    location: "Quênia",
     image:
       "https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=1400&auto=format&fit=crop",
     rating: 4.8,
     reviews: 751,
-    price: "From $350 / day",
+    price: "A partir de US$ 350 / dia",
   },
 ];
 
-// Restaurants
+// Restaurantes
 const restaurants: CardItem[] = [
   {
     id: "r1",
     title: "Sushi Saito",
-    location: "Tokyo • Sushi",
+    location: "Tóquio • Sushi",
     image:
       "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1400&auto=format&fit=crop",
     rating: 4.9,
@@ -237,7 +237,7 @@ const restaurants: CardItem[] = [
   {
     id: "r2",
     title: "Le Petit Bistro",
-    location: "Paris • Bistro",
+    location: "Paris • Bistrô",
     image:
       "https://images.unsplash.com/photo-1470337458703-46ad1756a187?q=80&w=1400&auto=format&fit=crop",
     rating: 4.6,
@@ -257,7 +257,7 @@ const restaurants: CardItem[] = [
   {
     id: "r4",
     title: "Joe's Pizza",
-    location: "New York • Pizza",
+    location: "Nova York • Pizza",
     image:
       "https://images.unsplash.com/photo-1542281286-9e0a16bb7366?q=80&w=1400&auto=format&fit=crop",
     rating: 4.7,
@@ -267,7 +267,7 @@ const restaurants: CardItem[] = [
   {
     id: "r5",
     title: "Trattoria Roma",
-    location: "Rome • Pasta",
+    location: "Roma • Massas",
     image:
       "https://images.unsplash.com/photo-1523986371872-9d3ba2e2f642?q=80&w=1400&auto=format&fit=crop",
     rating: 4.6,
@@ -276,7 +276,7 @@ const restaurants: CardItem[] = [
   },
 ];
 
-// Toolkit (imagens específicas por funcionalidade)
+// Central de recursos (imagens específicas por funcionalidade)
 const features: FeatureItem[] = [
   { key: "ai",          title: "Ajuda por IA",           subtitle: "Planeje em segundos",   icon: "flash",              image: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1400&auto=format&fit=crop" },
   { key: "diario",      title: "Diário de bordo",        subtitle: "Memórias da viagem",    icon: "book",               image: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0ea?q=80&w=1400&auto=format&fit=crop" },
@@ -290,14 +290,14 @@ const features: FeatureItem[] = [
   { key: "assessoria",  title: "Assessoria",             subtitle: "Vistos e suporte",      icon: "shield-checkmark",   image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=1400&auto=format&fit=crop" },
 ];
 
-// Upcoming
+// Próximos
 const upcoming: UpcomingItem[] = [
-  { id: "u1", dateLabel: "24 Nov", title: "Check-in: Rio de Janeiro", icon: "calendar" },
+  { id: "u1", dateLabel: "24 Nov", title: "Entrada: Rio de Janeiro", icon: "calendar" },
   { id: "u2", dateLabel: "02 Dez", title: "Trilha Aconcágua", icon: "map" },
   { id: "u3", dateLabel: "15 Dez", title: "Voo para Cusco", icon: "airplane" },
 ];
 
-// Community
+// Comunidade
 const community: CommunityPost[] = [
   {
     id: "c1",
@@ -325,7 +325,7 @@ const community: CommunityPost[] = [
   },
 ];
 
-// Promo
+// Promoção
 const promo = {
   title: "Promoções",
   subtitle: "Novas ofertas todos os dias",
@@ -344,13 +344,13 @@ const UPC_H = 90;
 const COM_W = Math.min(Screen.width * 0.84, 360);
 const COM_H = 260;
 
-/* ========== UTILS ========== */
+/* ========== UTILITÁRIOS ========== */
 function toDots(n: number): boolean[] {
   const round = Math.round(n);
   return new Array(5).fill(false).map((_, i) => i < round);
 }
 
-/* ========== SHARED UI ========== */
+/* ========== UI COMPARTILHADA ========== */
 const SectionHeader = ({
   title,
   action,
@@ -411,7 +411,7 @@ const HeartButton = ({
   </Pressable>
 );
 
-/* ========== CARDS ========== */
+/* ========== CARTÕES ========== */
 const SmallCard = ({
   item,
   fav,
@@ -461,17 +461,11 @@ const SmallCard = ({
   </View>
 );
 
-// Toolkit card
+// Cartão de recurso
 const FeatureCard = ({ item, styles }: { item: FeatureItem; styles: any }) => (
   <Pressable style={[styles.featureCard, styles.shadow]}>
     <SafeImageBackground uri={item.image} style={{ flex: 1 }} imageStyle={{ borderRadius: 16 }}>
       <View style={styles.featureScrim} />
-      <View style={{ position: "absolute", left: 12, right: 12, top: 12, flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <View style={styles.featurePill}>
-          <Ionicons name={item.icon} size={14} color="#0A0A0B" />
-        </View>
-        <Text style={{ color: "#E5E7EB", fontSize: 12 }}>Ferramenta EasyTrip</Text>
-      </View>
       <View style={{ position: "absolute", left: 12, right: 12, bottom: 12 }}>
         <Text style={{ color: "#fff", fontWeight: "800", fontSize: 18 }}>{item.title}</Text>
         {item.subtitle && <Text style={{ color: "#F3F4F6", fontSize: 13, marginTop: 2 }}>{item.subtitle}</Text>}
@@ -523,7 +517,7 @@ const CommunityCard = ({ post, styles }: { post: CommunityPost; styles: any }) =
   </Pressable>
 );
 
-// Promo
+// Promoção
 const PromoCard = ({ styles }: { styles: any }) => (
   <Pressable style={[styles.promoCard, styles.shadow]}>
     <View style={{ flex: 1, padding: 16, gap: 8 }}>
@@ -539,7 +533,7 @@ const PromoCard = ({ styles }: { styles: any }) => (
   </Pressable>
 );
 
-/* ========== HEADER & BOTTOM ========== */
+/* ========== CABEÇALHO E RODAPÉ ========== */
 const Header = ({
   theme,
   styles,
@@ -556,10 +550,10 @@ const Header = ({
   const [open, setOpen] = useState<string | null>(null);
 
   const opts: Record<string, string[]> = {
-    Sort: ["Top rated", "Lower price", "Nearby"],
-    When: ["Anytime", "This week", "This month"],
-    "Stay type": ["Hotel", "Home", "Villa"],
-    "Add Guest": ["1 guest", "2 guests", "3+ guests"],
+    Ordenar: ["Melhor avaliados", "Menor preço", "Mais próximos"],
+    Quando: ["Qualquer data", "Esta semana", "Este mês"],
+    "Tipo de hospedagem": ["Hotel", "Casa", "Vila"],
+    "Adicionar hóspede": ["1 hóspede", "2 hóspedes", "3+ hóspedes"],
   };
 
   return (
@@ -577,23 +571,23 @@ const Header = ({
           </Pressable>
         </View>
 
-        {/* Search */}
+        {/* Busca */}
         <View style={styles.searchPill}>
           <Ionicons name="search" size={18} color={theme.textMuted} style={{ marginRight: 8 }} />
           <View style={{ flex: 1 }}>
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Places to go, things to do, hotels..."
+              placeholder="Destinos, passeios, hotéis..."
               placeholderTextColor={theme.textMuted}
               returnKeyType="search"
-              onSubmitEditing={() => console.log("search:", query)}
+              onSubmitEditing={() => console.log("buscar:", query)}
               style={{ color: theme.text, fontWeight: "700", padding: 0 }}
             />
           </View>
         </View>
 
-        {/* Chips */}
+        {/* Filtros */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -631,11 +625,11 @@ const Header = ({
 
 const BottomBar = ({ theme, styles }: { theme: Theme; styles: any }) => {
   const items = [
-    { key: "explore", label: "Home", icon: "home-outline", activeIcon: "home" },
-    { key: "search", label: "Search", icon: "search-outline", activeIcon: "search" },
-    { key: "trips", label: "Trips", icon: "heart-outline", activeIcon: "heart" },
-    { key: "review", label: "Review", icon: "create-outline", activeIcon: "create" },
-    { key: "account", label: "Account", icon: "person-outline", activeIcon: "person" },
+    { key: "explore", label: "Início", icon: "home-outline", activeIcon: "home" },
+    { key: "search", label: "Buscar", icon: "search-outline", activeIcon: "search" },
+    { key: "trips", label: "Viagens", icon: "heart-outline", activeIcon: "heart" },
+    { key: "review", label: "Avaliar", icon: "create-outline", activeIcon: "create" },
+    { key: "account", label: "Conta", icon: "person-outline", activeIcon: "person" },
   ];
   const activeIndex = 0;
 
@@ -662,7 +656,7 @@ const BottomBar = ({ theme, styles }: { theme: Theme; styles: any }) => {
   );
 };
 
-/* ========== MAIN ========== */
+/* ========== PRINCIPAL ========== */
 export default function Home() {
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [isDark, setIsDark] = useState(true);
@@ -680,7 +674,7 @@ export default function Home() {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <View style={{ paddingHorizontal: 16, gap: 20 }}>
-          {/* Hero (imagem trocada no editors mais abaixo) */}
+          {/* Destaque (imagem trocada nos editores mais abaixo) */}
           <SafeImageBackground
             uri="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1400&auto=format&fit=crop"
             style={styles.hero}
@@ -688,16 +682,16 @@ export default function Home() {
           >
             <View style={styles.heroScrim} />
             <View style={{ position: "absolute", left: 16, bottom: 16, right: 16 }}>
-              <Text style={{ color: "#fff", opacity: 0.9, marginBottom: 6 }}>EasyTrip Rewards</Text>
-              <Text style={[styles.h1, { color: "#fff" }]}>Get 5% back on top stays</Text>
+              <Text style={{ color: "#fff", opacity: 0.9, marginBottom: 6 }}>Recompensas EasyTrip</Text>
+              <Text style={[styles.h1, { color: "#fff" }]}>Receba 5% de volta nas melhores hospedagens</Text>
               <Pressable style={styles.cta}>
-                <Text style={{ color: "#0A0A0B", fontWeight: "800" }}>Find a hotel</Text>
+                <Text style={styles.ctaText}>Encontrar hotel</Text>
               </Pressable>
             </View>
           </SafeImageBackground>
 
-          {/* Stays (título curto) */}
-          <SectionHeader title="Top stays" action={{ label: "View all", onPress: () => {} }} styles={styles} />
+          {/* Hospedagens (título curto) */}
+          <SectionHeader title="Melhores hospedagens" action={{ label: "Ver tudo", onPress: () => {} }} styles={styles} />
           <FlatList
             horizontal
             data={stays}
@@ -715,8 +709,8 @@ export default function Home() {
             )}
           />
 
-          {/* Experiences */}
-          <SectionHeader title="Must-do experiences" action={{ label: "View all", onPress: () => {} }} styles={styles} />
+          {/* Experiências */}
+          <SectionHeader title="Experiências imperdíveis" action={{ label: "Ver tudo", onPress: () => {} }} styles={styles} />
           <FlatList
             horizontal
             data={experiences}
@@ -734,8 +728,8 @@ export default function Home() {
             )}
           />
 
-          {/* Restaurants */}
-          <SectionHeader title="Popular restaurants" action={{ label: "View all", onPress: () => {} }} styles={styles} />
+          {/* Restaurantes */}
+          <SectionHeader title="Restaurantes populares" action={{ label: "Ver tudo", onPress: () => {} }} styles={styles} />
           <FlatList
             horizontal
             data={restaurants}
@@ -778,8 +772,8 @@ export default function Home() {
           {/* Promoções */}
           <PromoCard styles={styles} />
 
-          {/* Toolkit */}
-          <SectionHeader title="Seu toolkit de viagem" styles={styles} />
+          {/* Central de recursos */}
+          <SectionHeader title="Central de recursos" styles={styles} />
           <FlatList
             horizontal
             data={features}
@@ -790,8 +784,8 @@ export default function Home() {
             renderItem={({ item }) => <FeatureCard item={item} styles={styles} />}
           />
 
-          {/* From our editors — IMAGEM TROCADA */}
-          <SectionHeader title="From our editors" styles={styles} />
+          {/* Dos nossos editores — IMAGEM TROCADA */}
+          <SectionHeader title="Dos nossos editores" styles={styles} />
           <SafeImageBackground
             uri="https://images.unsplash.com/photo-1501594907352-04cda38ebc29?q=80&w=1400&auto=format&fit=crop"
             style={{ height: 220, borderRadius: 20, overflow: "hidden" }}
@@ -799,11 +793,9 @@ export default function Home() {
           >
             <View style={styles.editorScrim} />
             <View style={{ position: "absolute", left: 16, bottom: 16 }}>
-              <Text style={[styles.h3, { color: "#fff" }]}>
-                Scenic roads you can’t miss this season
-              </Text>
+              <Text style={[styles.h3, { color: "#fff" }]}>Estradas cênicas imperdíveis nesta temporada</Text>
               <Pressable style={[styles.cta, { marginTop: 8 }]}>
-                <Text style={{ color: "#0A0A0B", fontWeight: "800" }}>Explore</Text>
+                <Text style={styles.ctaText}>Explorar</Text>
               </Pressable>
             </View>
           </SafeImageBackground>
@@ -831,11 +823,11 @@ const createStyles = (theme: Theme) => {
     // sombra aplicada nos cards apenas no light
     shadow: isLight
       ? {
-          shadowColor: "#000",
-          shadowOpacity: 0.08,
-          shadowRadius: 12,
-          shadowOffset: { width: 0, height: 6 },
-          elevation: 5,
+          shadowColor: "#0F172A",
+          shadowOpacity: 0.15,
+          shadowRadius: 20,
+          shadowOffset: { width: 0, height: 12 },
+          elevation: 10,
         }
       : {},
 
@@ -932,6 +924,10 @@ const createStyles = (theme: Theme) => {
       borderRadius: 999,
       backgroundColor: ACCENT,
     },
+    ctaText: {
+      fontWeight: "800",
+      color: isLight ? "#FFFFFF" : "#0A0A0B",
+    },
 
     sectionHeader: {
       marginTop: 8,
@@ -997,7 +993,7 @@ const createStyles = (theme: Theme) => {
     },
     comScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: theme.scrim },
 
-    /* Ghost CTA */
+    /* Botão fantasma */
     ghostCta: {
       paddingVertical: 8,
       paddingHorizontal: 16,
@@ -1019,7 +1015,7 @@ const createStyles = (theme: Theme) => {
       overflow: "hidden",
     },
 
-    /* Toolkit (features) */
+    /* Central de recursos */
     featureCard: {
       width: FEAT_W,
       height: FEAT_H,
@@ -1030,17 +1026,10 @@ const createStyles = (theme: Theme) => {
       borderColor: theme.border,
     },
     featureScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: theme.scrim },
-    featurePill: {
-      alignSelf: "flex-start",
-      backgroundColor: "#38F2C1",
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 999,
-    },
 
     editorScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: theme.scrimStrong },
 
-    /* Bottom bar */
+    /* Barra inferior */
     bottomBarWrap: { position: "absolute", left: 0, right: 0, bottom: 0 },
     bottomBar: {
       flexDirection: "row",
@@ -1057,7 +1046,7 @@ const createStyles = (theme: Theme) => {
   });
 };
 
-/* coração overlay */
+/* sobreposição do coração */
 const ss = StyleSheet.create({
   heartBtnOverlay: {
     position: "absolute",
