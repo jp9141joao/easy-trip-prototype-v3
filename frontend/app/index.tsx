@@ -697,7 +697,8 @@ export default function Home() {
             data={stays}
             keyExtractor={(i) => i.id}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 6 }}
+            style={styles.carouselList}
+            contentContainerStyle={styles.carouselContent}
             ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
             renderItem={({ item }) => (
               <SmallCard
@@ -716,7 +717,8 @@ export default function Home() {
             data={experiences}
             keyExtractor={(i) => i.id}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 6 }}
+            style={styles.carouselList}
+            contentContainerStyle={styles.carouselContent}
             ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
             renderItem={({ item }) => (
               <SmallCard
@@ -735,7 +737,8 @@ export default function Home() {
             data={restaurants}
             keyExtractor={(i) => i.id}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 6 }}
+            style={styles.carouselList}
+            contentContainerStyle={styles.carouselContent}
             ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
             renderItem={({ item }) => (
               <SmallCard
@@ -754,6 +757,8 @@ export default function Home() {
             data={upcoming}
             keyExtractor={(i) => i.id}
             showsHorizontalScrollIndicator={false}
+            style={styles.carouselList}
+            contentContainerStyle={styles.carouselContent}
             ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
             renderItem={({ item }) => <UpcomingCard item={item} styles={styles} />}
           />
@@ -765,6 +770,8 @@ export default function Home() {
             data={community}
             keyExtractor={(i) => i.id}
             showsHorizontalScrollIndicator={false}
+            style={styles.carouselList}
+            contentContainerStyle={styles.carouselContent}
             ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
             renderItem={({ item }) => <CommunityCard post={item} styles={styles} />}
           />
@@ -779,7 +786,8 @@ export default function Home() {
             data={features}
             keyExtractor={(i) => i.key}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingVertical: 4 }}
+            style={styles.carouselList}
+            contentContainerStyle={styles.featureCarousel}
             ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
             renderItem={({ item }) => <FeatureCard item={item} styles={styles} />}
           />
@@ -880,6 +888,9 @@ const createStyles = (theme: Theme) => {
     // Chips
     chipsCarouselScroll: { overflow: "visible" },
     chipsCarousel: { paddingTop: 10, paddingBottom: 2, paddingRight: 8 },
+    carouselList: { overflow: "visible" },
+    carouselContent: { paddingTop: 6, paddingBottom: 24 },
+    featureCarousel: { paddingTop: 10, paddingBottom: 24 },
     chipWrap: { position: "relative", marginRight: 8, overflow: "visible" },
     lightChip: {
       flexDirection: "row",
@@ -941,7 +952,6 @@ const createStyles = (theme: Theme) => {
     card: {
       backgroundColor: theme.cardAlt,
       borderRadius: 16,
-      overflow: "hidden",
       borderWidth: 1,
       borderColor: theme.border,
     },
@@ -989,7 +999,6 @@ const createStyles = (theme: Theme) => {
       backgroundColor: theme.cardAlt,
       borderWidth: 1,
       borderColor: theme.border,
-      overflow: "hidden",
     },
     comScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: theme.scrim },
 
@@ -1012,7 +1021,6 @@ const createStyles = (theme: Theme) => {
       borderColor: theme.border,
       flexDirection: "row",
       alignItems: "center",
-      overflow: "hidden",
     },
 
     /* Central de recursos */
@@ -1020,7 +1028,6 @@ const createStyles = (theme: Theme) => {
       width: FEAT_W,
       height: FEAT_H,
       borderRadius: 16,
-      overflow: "hidden",
       backgroundColor: theme.card,
       borderWidth: 1,
       borderColor: theme.border,
