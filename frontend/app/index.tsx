@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import {
   FlatList,
+  Modal,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -8,6 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import {
   stays,
@@ -33,15 +35,95 @@ import { SafeImageBackground } from "./utils/safeImages";
 import { DARK, LIGHT, type Theme } from "./theme";
 
 type FavoritesState = Record<string, boolean>;
+type ModalType = "stays" | "experiences" | "restaurants" | "upcoming" | "community";
 
 export default function Home() {
   const [favorites, setFavorites] = useState<FavoritesState>({});
   const [isDark, setIsDark] = useState(true);
+  const [modalType, setModalType] = useState<ModalType | null>(null);
 
   const theme: Theme = isDark ? DARK : LIGHT;
   const styles = useMemo(() => createHomeStyles(theme), [theme]);
 
   const toggleFav = (id: string) => setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+  const openModal = (type: ModalType) => setModalType(type);
+  const closeModal = () => setModalType(null);
+
+  const modalTitles: Record<ModalType, string> = {
+    stays: "Melhores hospedagens",
+    experiences: "Experiências imperdíveis",
+    restaurants: "Restaurantes populares",
+    upcoming: "Próximos",
+    community: "Da comunidade",
+  };
+
+  const renderModalContent = () => {
+    if (!modalType) {
+      return null;
+    }
+
+    if (modalType === "upcoming") {
+      return (
+        <FlatList
+          key="upcoming"
+          data={upcomingData}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.modalList}
+          renderItem={({ item }) => (
+            <View style={styles.modalFullItem}>
+              <UpcomingCard item={item} styles={styles} />
+            </View>
+          )}
+          ListFooterComponent={<View style={{ height: 8 }} />}
+        />
+      );
+    }
+
+    if (modalType === "community") {
+      return (
+        <FlatList
+          key="community"
+          data={communityPosts}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.modalList}
+          renderItem={({ item }) => (
+            <View style={styles.modalFullItem}>
+              <CommunityCard post={item} styles={styles} />
+            </View>
+          )}
+          ListFooterComponent={<View style={{ height: 8 }} />}
+        />
+      );
+    }
+
+    const data = modalType === "stays" ? stays : modalType === "experiences" ? experiences : restaurants;
+
+    return (
+      <FlatList
+        key={modalType}
+        data={data}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        numColumns={2}
+        contentContainerStyle={styles.modalList}
+        columnWrapperStyle={styles.modalColumn}
+        renderItem={({ item }) => (
+          <View style={styles.modalGridItem}>
+            <SmallCard
+              item={item}
+              fav={!!favorites[item.id]}
+              onToggleFav={() => toggleFav(item.id)}
+              styles={styles}
+            />
+          </View>
+        )}
+        extraData={favorites}
+        ListFooterComponent={<View style={{ height: 12 }} />}
+      />
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -66,7 +148,11 @@ export default function Home() {
             </View>
           </SafeImageBackground>
 
-          <SectionHeader title="Melhores hospedagens" action={{ label: "Ver tudo", onPress: () => {} }} styles={styles} />
+          <SectionHeader
+            title="Melhores hospedagens"
+            action={{ label: "Ver mais", onPress: () => openModal("stays") }}
+            styles={styles}
+          />
           <FlatList
             horizontal
             data={stays}
@@ -85,7 +171,11 @@ export default function Home() {
             )}
           />
 
-          <SectionHeader title="Experiências imperdíveis" action={{ label: "Ver tudo", onPress: () => {} }} styles={styles} />
+          <SectionHeader
+            title="Experiências imperdíveis"
+            action={{ label: "Ver mais", onPress: () => openModal("experiences") }}
+            styles={styles}
+          />
           <FlatList
             horizontal
             data={experiences}
@@ -104,7 +194,11 @@ export default function Home() {
             )}
           />
 
-          <SectionHeader title="Restaurantes populares" action={{ label: "Ver tudo", onPress: () => {} }} styles={styles} />
+          <SectionHeader
+            title="Restaurantes populares"
+            action={{ label: "Ver mais", onPress: () => openModal("restaurants") }}
+            styles={styles}
+          />
           <FlatList
             horizontal
             data={restaurants}
@@ -123,7 +217,11 @@ export default function Home() {
             )}
           />
 
-          <SectionHeader title="Próximos" action={{ label: "Ver agenda", onPress: () => {} }} styles={styles} />
+          <SectionHeader
+            title="Próximos"
+            action={{ label: "Ver mais", onPress: () => openModal("upcoming") }}
+            styles={styles}
+          />
           <FlatList
             horizontal
             data={upcomingData}
@@ -135,7 +233,11 @@ export default function Home() {
             renderItem={({ item }) => <UpcomingCard item={item} styles={styles} />}
           />
 
-          <SectionHeader title="Da comunidade" action={{ label: "Ver mais", onPress: () => {} }} styles={styles} />
+          <SectionHeader
+            title="Da comunidade"
+            action={{ label: "Ver mais", onPress: () => openModal("community") }}
+            styles={styles}
+          />
           <FlatList
             horizontal
             data={communityPosts}
@@ -165,6 +267,34 @@ export default function Home() {
           <EditorialHighlight highlight={editorialHighlight} styles={styles} />
         </View>
       </ScrollView>
+
+      <Modal
+        transparent
+        visible={modalType !== null}
+        animationType="fade"
+        onRequestClose={closeModal}
+        statusBarTranslucent
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable
+            onPress={closeModal}
+            style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0 }}
+            accessibilityRole="button"
+            accessibilityLabel="Fechar modal"
+          />
+
+          <View style={[styles.modalSheet, styles.shadow]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.h2}>{modalType ? modalTitles[modalType] : ""}</Text>
+              <Pressable onPress={closeModal} hitSlop={10} accessibilityRole="button" accessibilityLabel="Fechar">
+                <Ionicons name="close" size={22} color={theme.text} />
+              </Pressable>
+            </View>
+
+            <View style={{ flex: 1 }}>{renderModalContent()}</View>
+          </View>
+        </View>
+      </Modal>
 
       <BottomBar theme={theme} styles={styles} />
     </SafeAreaView>
