@@ -225,6 +225,54 @@ export const createHomeStyles = (theme: Theme) => {
 
     editorScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: theme.scrimStrong },
 
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: theme.bg,
+      gap: 8,
+    },
+    modalSheet: {
+      flex: 1,
+      borderRadius: 0,
+      paddingHorizontal: 20,
+      backgroundColor: theme.cardAlt,
+      paddingTop: 8,
+      paddingBottom: 12,
+    },
+    modalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+    },
+    modalClose: {
+      width: 36,
+      height: 36,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.card,
+    },
+    modalList: {
+      paddingBottom: 32,
+      paddingHorizontal: 4,
+    },
+    modalColumn: {
+      justifyContent: "space-between",
+    },
+    modalGridItem: {
+      flex: 1,
+      alignItems: "center",
+      paddingHorizontal: 6,
+      marginBottom: 20,
+    },
+    modalFullItem: {
+      marginBottom: 16,
+      alignItems: "center",
+    },
+
     bottomBarWrap: { position: "absolute", left: 0, right: 0, bottom: 0 },
     bottomBar: {
       flexDirection: "row",
