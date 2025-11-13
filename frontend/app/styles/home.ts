@@ -229,6 +229,16 @@ export const createHomeStyles = (theme: Theme) => {
 
     modalOverlay: {
       flex: 1,
+      backgroundColor: theme.bg,
+      gap: 8,
+    },
+    modalSheet: {
+      flex: 1,
+      borderRadius: 0,
+      paddingHorizontal: 20,
+      backgroundColor: theme.cardAlt,
+      paddingTop: 8,
+      paddingBottom: 12,
       justifyContent: "flex-end",
       backgroundColor: theme.scrimStrong,
       paddingTop: 60,
@@ -247,6 +257,22 @@ export const createHomeStyles = (theme: Theme) => {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+    },
+    modalClose: {
+      width: 36,
+      height: 36,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: theme.border,
+      backgroundColor: theme.card,
+    },
+    modalList: {
+      paddingBottom: 32,
+      paddingHorizontal: 4,
       marginBottom: 20,
     },
     modalList: {

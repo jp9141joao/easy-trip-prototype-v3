@@ -269,6 +269,30 @@ export default function Home() {
       </ScrollView>
 
       <Modal
+        visible={modalType !== null}
+        animationType="slide"
+        onRequestClose={closeModal}
+        statusBarTranslucent
+      >
+        <SafeAreaView style={styles.modalOverlay}>
+          <View style={styles.modalHeader}>
+            <Pressable
+              onPress={closeModal}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Fechar"
+              style={styles.modalClose}
+            >
+              <Ionicons name="close" size={22} color={theme.text} />
+            </Pressable>
+            <Text style={styles.h2}>{modalType ? modalTitles[modalType] : ""}</Text>
+            <View style={{ width: 22 }} />
+          </View>
+
+          <View style={styles.modalSheet}>
+            <View style={{ flex: 1 }}>{renderModalContent()}</View>
+          </View>
+        </SafeAreaView>
         transparent
         visible={modalType !== null}
         animationType="fade"
