@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { Dimensions, StyleSheet } from "react-native";
 
 import { ACCENT } from "../constants/colors";
 import {
@@ -13,6 +13,8 @@ import {
 import type { Theme } from "../theme";
 
 export type HomeStyles = ReturnType<typeof createHomeStyles>;
+
+const ScreenHeight = Dimensions.get("window").height;
 
 export const createHomeStyles = (theme: Theme) => {
   const isLight = theme.bg === "#FFFFFF";
@@ -237,6 +239,19 @@ export const createHomeStyles = (theme: Theme) => {
       backgroundColor: theme.cardAlt,
       paddingTop: 8,
       paddingBottom: 12,
+      justifyContent: "flex-end",
+      backgroundColor: theme.scrimStrong,
+      paddingTop: 60,
+    },
+    modalSheet: {
+      width: "100%",
+      backgroundColor: theme.cardAlt,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      paddingHorizontal: 20,
+      paddingTop: 20,
+      paddingBottom: 32,
+      maxHeight: Math.min(ScreenHeight * 0.85, 720),
     },
     modalHeader: {
       flexDirection: "row",
@@ -258,6 +273,10 @@ export const createHomeStyles = (theme: Theme) => {
     modalList: {
       paddingBottom: 32,
       paddingHorizontal: 4,
+      marginBottom: 20,
+    },
+    modalList: {
+      paddingBottom: 32,
     },
     modalColumn: {
       justifyContent: "space-between",

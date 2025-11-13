@@ -293,6 +293,31 @@ export default function Home() {
             <View style={{ flex: 1 }}>{renderModalContent()}</View>
           </View>
         </SafeAreaView>
+        transparent
+        visible={modalType !== null}
+        animationType="fade"
+        onRequestClose={closeModal}
+        statusBarTranslucent
+      >
+        <View style={styles.modalOverlay}>
+          <Pressable
+            onPress={closeModal}
+            style={{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0 }}
+            accessibilityRole="button"
+            accessibilityLabel="Fechar modal"
+          />
+
+          <View style={[styles.modalSheet, styles.shadow]}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.h2}>{modalType ? modalTitles[modalType] : ""}</Text>
+              <Pressable onPress={closeModal} hitSlop={10} accessibilityRole="button" accessibilityLabel="Fechar">
+                <Ionicons name="close" size={22} color={theme.text} />
+              </Pressable>
+            </View>
+
+            <View style={{ flex: 1 }}>{renderModalContent()}</View>
+          </View>
+        </View>
       </Modal>
 
       <BottomBar theme={theme} styles={styles} />
